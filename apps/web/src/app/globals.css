@@ -1,0 +1,123 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --background: 210 20% 98%;
+    --foreground: 222.2 84% 4.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4.9%;
+    --primary: 158 64% 32%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 210 20% 92%;
+    --secondary-foreground: 222.2 47.4% 11.2%;
+    --muted: 210 20% 94%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+    --accent: 38 92% 50%;
+    --accent-foreground: 26 83.3% 14.1%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 214.3 31.8% 88%;
+    --input: 214.3 31.8% 88%;
+    --ring: 158 64% 32%;
+    --gold: 38 92% 50%;
+    --emerald: 158 64% 32%;
+  }
+
+  .dark {
+    --background: 222.2 84% 3.5%;
+    --foreground: 210 40% 98%;
+    --card: 222.2 84% 5%;
+    --card-foreground: 210 40% 98%;
+    --popover: 222.2 84% 5%;
+    --popover-foreground: 210 40% 98%;
+    --primary: 158 64% 42%;
+    --primary-foreground: 355.7 100% 97.3%;
+    --secondary: 217.2 32.6% 12%;
+    --secondary-foreground: 210 40% 98%;
+    --muted: 217.2 32.6% 12%;
+    --muted-foreground: 215 20.2% 65.1%;
+    --accent: 43 96% 56%;
+    --accent-foreground: 26 83.3% 14.1%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 217.2 32.6% 14%;
+    --input: 217.2 32.6% 14%;
+    --ring: 158 64% 42%;
+    --gold: 43 96% 56%;
+    --emerald: 158 64% 42%;
+  }
+
+  * {
+    border-color: var(--border);
+  }
+
+  body {
+    background-color: var(--background);
+    color: var(--foreground);
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+    transition: background-color 0.3s ease, color 0.3s ease;
+  }
+
+  /* Custom Quran Typography */
+  .font-quran {
+    font-family: var(--font-arabic), 'Amiri', 'Noto Naskh Arabic', serif;
+    line-height: 2.2;
+  }
+
+  .font-sans {
+    font-family: var(--font-sans), 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  }
+}
+
+/* Islamic Geometric Background Pattern */
+.bg-islamic-pattern {
+  background-image: radial-gradient(rgba(234, 179, 8, 0.08) 1px, transparent 1px),
+    radial-gradient(rgba(16, 185, 129, 0.05) 1px, transparent 1px);
+  background-size: 32px 32px;
+  background-position: 0 0, 16px 16px;
+}
+
+.dark .bg-islamic-pattern {
+  background-image: radial-gradient(rgba(234, 179, 8, 0.12) 1px, transparent 1px),
+    radial-gradient(rgba(16, 185, 129, 0.08) 1px, transparent 1px);
+}
+
+/* Sound wave animation */
+@keyframes soundwave {
+  0%, 100% { height: 6px; }
+  50% { height: 24px; }
+}
+
+.animate-soundwave-1 { animation: soundwave 1.2s ease-in-out infinite 0.1s; }
+.animate-soundwave-2 { animation: soundwave 1.2s ease-in-out infinite 0.3s; }
+.animate-soundwave-3 { animation: soundwave 1.2s ease-in-out infinite 0.5s; }
+.animate-soundwave-4 { animation: soundwave 1.2s ease-in-out infinite 0.2s; }
+.animate-soundwave-5 { animation: soundwave 1.2s ease-in-out infinite 0.4s; }
+
+/* Subtle pulse glow */
+@keyframes subtle-glow {
+  0%, 100% { opacity: 0.3; transform: scale(1); }
+  50% { opacity: 0.6; transform: scale(1.05); }
+}
+
+.animate-glow {
+  animation: subtle-glow 6s ease-in-out infinite;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.2);
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(234, 179, 8, 0.4);
+}

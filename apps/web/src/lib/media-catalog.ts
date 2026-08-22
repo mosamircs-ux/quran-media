@@ -1,0 +1,171 @@
+export interface MediaShowcaseItem {
+  id: string;
+  titleAr: string;
+  titleEn: string;
+  surahNumber: number;
+  surahNameAr: string;
+  surahNameEn: string;
+  ayahRange: string;
+  aspectRatio: '9:16' | '16:9' | '1:1' | '4:5';
+  resolution: '1080p' | '4K' | '720p';
+  duration: string;
+  reciterName: string;
+  reciterStyle: string;
+  visualStyle: string;
+  visualStyleNameAr: string;
+  visualStyleNameEn: string;
+  gradient: string;
+  viewsCount: string;
+  downloadCount: string;
+  arabicText: string;
+  translation: string;
+  videoPreviewUrl: string;
+  audioUrl: string;
+}
+
+export const MEDIA_SHOWCASE_ITEMS: MediaShowcaseItem[] = [
+  {
+    id: 'qm-vid-1',
+    titleAr: 'سكينة الفجر في سورة الفلق',
+    titleEn: 'Dawn Tranquility in Al-Falaq',
+    surahNumber: 113,
+    surahNameAr: 'الفلق',
+    surahNameEn: 'Al-Falaq',
+    ayahRange: '1-5',
+    aspectRatio: '9:16',
+    resolution: '1080p',
+    duration: '0:38',
+    reciterName: 'Mishari Rashid Al-Afasy',
+    reciterStyle: 'Murattal',
+    visualStyle: 'peaceful',
+    visualStyleNameAr: 'سكينة وطمأنينة',
+    visualStyleNameEn: 'Peaceful Dawn',
+    gradient: 'from-slate-950 via-teal-950 to-slate-950',
+    viewsCount: '24.5K',
+    downloadCount: '3.8K',
+    arabicText: 'قُلْ أَعُوذُ بِرَبِّ ٱلْفَلَقِ • مِن شَرِّ مَا خَلَقَ • وَمِن شَرِّ غَاسِقٍ إِذَا وَقَبَ',
+    translation: 'Say, "I seek refuge in the Lord of daybreak from the evil of whatever He has created..."',
+    videoPreviewUrl: 'https://assets.mixkit.co/videos/preview/mixkit-dramatic-clouds-and-sun-rays-in-the-sky-40097-large.mp4',
+    audioUrl: 'https://audio.qurancdn.com/Alafasy/mp3/113001.mp3',
+  },
+  {
+    id: 'qm-vid-2',
+    titleAr: 'سورة الملك - تلاوة سينمائية هادئة',
+    titleEn: 'Surah Al-Mulk - Cinematic Night',
+    surahNumber: 67,
+    surahNameAr: 'الملك',
+    surahNameEn: 'Al-Mulk',
+    ayahRange: '1-4',
+    aspectRatio: '16:9',
+    resolution: '4K',
+    duration: '1:45',
+    reciterName: 'Mahmoud Khalil Al-Husary',
+    reciterStyle: 'Tahqiq',
+    visualStyle: 'night',
+    visualStyleNameAr: 'سكينة الليل والنجوم',
+    visualStyleNameEn: 'Celestial Night',
+    gradient: 'from-amber-950 via-slate-900 to-slate-950',
+    viewsCount: '88.2K',
+    downloadCount: '12.4K',
+    arabicText: 'تَبَٰرَكَ ٱلَّذِى بِيَدِهِ ٱلْمُلْكُ وَهُوَ عَلَىٰ كُلِّ شَىْءٍۢ قَدِيرٌ',
+    translation: 'Blessed is the One in Whose Hand is the Kingdom, and He is Most Capable of everything.',
+    videoPreviewUrl: 'https://assets.mixkit.co/videos/preview/mixkit-stars-in-the-night-sky-and-the-milky-way-42646-large.mp4',
+    audioUrl: 'https://audio.qurancdn.com/Husary/128/067001.mp3',
+  },
+  {
+    id: 'qm-vid-3',
+    titleAr: 'إن مع العسر يسراً - سورة الشرح',
+    titleEn: 'With Hardship Comes Ease',
+    surahNumber: 94,
+    surahNameAr: 'الشرح',
+    surahNameEn: 'Ash-Sharh',
+    ayahRange: '5-6',
+    aspectRatio: '1:1',
+    resolution: '1080p',
+    duration: '0:42',
+    reciterName: 'AbdulBaset AbdulSamad',
+    reciterStyle: 'Murattal',
+    visualStyle: 'nature',
+    visualStyleNameAr: 'طبيعة خضراء وشروق',
+    visualStyleNameEn: 'Lush Nature Sunrise',
+    gradient: 'from-emerald-950 via-slate-900 to-teal-950',
+    viewsCount: '53.1K',
+    downloadCount: '9.2K',
+    arabicText: 'فَإِنَّ مَعَ ٱلْعُسْرِ يُسْرًا • إِنَّ مَعَ ٱلْعُسْرِ يُسْرًا',
+    translation: 'So, surely with hardship comes ease. Surely with hardship comes ease.',
+    videoPreviewUrl: 'https://assets.mixkit.co/videos/preview/mixkit-aerial-view-of-a-green-mountain-range-40742-large.mp4',
+    audioUrl: 'https://audio.qurancdn.com/AbdulBaset/Murattal/mp3/094005.mp3',
+  },
+  {
+    id: 'qm-vid-4',
+    titleAr: 'آية الكرسي - أعظم آية في كتاب الله',
+    titleEn: 'Ayat Al-Kursi - The Supreme Verse',
+    surahNumber: 2,
+    surahNameAr: 'البقرة',
+    surahNameEn: 'Al-Baqarah',
+    ayahRange: '255',
+    aspectRatio: '9:16',
+    resolution: '4K',
+    duration: '1:15',
+    reciterName: 'Mishari Rashid Al-Afasy',
+    reciterStyle: 'Murattal',
+    visualStyle: 'geometry',
+    visualStyleNameAr: 'زخرفة إسلامية مذهبة',
+    visualStyleNameEn: 'Sacred Arabesque',
+    gradient: 'from-cyan-950 via-slate-900 to-blue-950',
+    viewsCount: '142K',
+    downloadCount: '28.5K',
+    arabicText: 'ٱللَّهُ لَآ إِلَٰهَ إِلَّا هُوَ ٱلْحَىُّ ٱلْقَيُّومُ ۚ لَا تَأْخُذُهُۥ سِنَةٌۭ وَلَا نَوْمٌۭ',
+    translation: 'Allah! There is no god except Him, the Ever-Living, All-Sustaining.',
+    videoPreviewUrl: 'https://assets.mixkit.co/videos/preview/mixkit-dramatic-clouds-and-sun-rays-in-the-sky-40097-large.mp4',
+    audioUrl: 'https://audio.qurancdn.com/Alafasy/mp3/002255.mp3',
+  },
+  {
+    id: 'qm-vid-5',
+    titleAr: 'تأملات سورة الرحمن - النعم الإلهية',
+    titleEn: 'Reflections on Surah Ar-Rahman',
+    surahNumber: 55,
+    surahNameAr: 'الرحمن',
+    surahNameEn: 'Ar-Rahman',
+    ayahRange: '1-13',
+    aspectRatio: '16:9',
+    resolution: '1080p',
+    duration: '2:10',
+    reciterName: 'Abdur-Rahman As-Sudais',
+    reciterStyle: 'Haramain',
+    visualStyle: 'ocean',
+    visualStyleNameAr: 'أمواج وبحار صافية',
+    visualStyleNameEn: 'Crystal Ocean',
+    gradient: 'from-slate-900 via-amber-950 to-slate-950',
+    viewsCount: '67.4K',
+    downloadCount: '11.3K',
+    arabicText: 'ٱلرَّحْمَٰنُ • عَلَّمَ ٱلْقُرْءَانَ • خَلَقَ ٱلْإِنسَٰنَ • عَلَّمَهُ ٱلْبَيَانَ',
+    translation: 'The Most Compassionate, taught the Quran, created humanity, and taught them speech.',
+    videoPreviewUrl: 'https://assets.mixkit.co/videos/preview/mixkit-waves-in-the-water-1164-large.mp4',
+    audioUrl: 'https://audio.qurancdn.com/Sudais/mp3/055001.mp3',
+  },
+  {
+    id: 'qm-vid-6',
+    titleAr: 'سورة الإخلاص - توحيد الخالق',
+    titleEn: 'Surah Al-Ikhlas - Pure Monotheism',
+    surahNumber: 112,
+    surahNameAr: 'الإخلاص',
+    surahNameEn: 'Al-Ikhlas',
+    ayahRange: '1-4',
+    aspectRatio: '4:5',
+    resolution: '1080p',
+    duration: '0:35',
+    reciterName: 'Mishari Rashid Al-Afasy',
+    reciterStyle: 'Murattal',
+    visualStyle: 'minimal',
+    visualStyleNameAr: 'تبسيطي إيماني',
+    visualStyleNameEn: 'Minimalist Reverence',
+    gradient: 'from-emerald-950 via-slate-900 to-slate-950',
+    viewsCount: '39.8K',
+    downloadCount: '7.1K',
+    arabicText: 'قُلْ هُوَ ٱللَّهُ أَحَدٌ • ٱللَّهُ ٱلصَّمَدُ • لَمْ يَلِدْ وَلَمْ يُولَدْ',
+    translation: 'Say, "He is Allah—One and Indivisible; Allah—the Sustainer needed by all."',
+    videoPreviewUrl: 'https://assets.mixkit.co/videos/preview/mixkit-dramatic-clouds-and-sun-rays-in-the-sky-40097-large.mp4',
+    audioUrl: 'https://audio.qurancdn.com/Alafasy/mp3/112001.mp3',
+  },
+];

@@ -1,0 +1,16 @@
+FROM node:20-alpine AS base
+
+WORKDIR /app
+
+RUN corepack enable && corepack prepare pnpm@9.15.4 --activate
+
+COPY package.json pnpm-workspace.yaml turbo.json pnpm-lock.yaml* ./
+COPY packages/ ./packages/
+COPY apps/web/ ./apps/web/
+
+RUN pnpm install --frozen-lockfile
+RUN pnpm --filter @quran-media/database run db:generate
+RUN pnpm --filter @quran-media/web run build
+
+EXPOSE 3000
+CMD ["pnpm", "--filter", "@quran-media/web", "run", "start"]

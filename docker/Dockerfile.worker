@@ -1,0 +1,20 @@
+FROM node:20-alpine AS base
+
+# Install FFmpeg and font libraries for subtitle rendering
+RUN apk add --no-cache ffmpeg font-noto-arabic font-noto fontconfig
+
+WORKDIR /app
+
+# Enable pnpm
+RUN corepack enable && corepack prepare pnpm@9.15.4 --activate
+
+COPY package.json pnpm-workspace.yaml turbo.json pnpm-lock.yaml* ./
+COPY packages/ ./packages/
+COPY apps/worker/ ./apps/worker/
+
+RUN pnpm install --frozen-lockfile
+RUN pnpm --filter @quran-media/database run db:generate
+RUN pnpm --filter @quran-media/worker run build
+
+EXPOSE 3001
+CMD ["pnpm", "--filter", "@quran-media/worker", "run", "start"]

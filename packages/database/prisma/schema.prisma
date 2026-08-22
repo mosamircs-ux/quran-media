@@ -1,0 +1,203 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  USER
+  CREATOR
+  ADMIN
+}
+
+enum ProjectStatus {
+  DRAFT
+  ACTIVE
+  ARCHIVED
+}
+
+enum GenerationType {
+  TEXT
+  STORY
+  IMAGE
+  VIDEO
+}
+
+enum JobStatus {
+  PENDING
+  QUEUED
+  PROCESSING
+  COMPLETED
+  FAILED
+  CANCELLED
+}
+
+enum MediaType {
+  IMAGE
+  VIDEO
+  AUDIO
+  SUBTITLE
+}
+
+enum AspectRatio {
+  RATIO_9_16
+  RATIO_16_9
+  RATIO_1_1
+  RATIO_4_5
+}
+
+model User {
+  id            String       @id @default(cuid())
+  email         String       @unique
+  name          String?
+  image         String?
+  role          Role         @default(USER)
+  locale        String       @default("ar")
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+  projects      Project[]
+  mediaAssets   MediaAsset[]
+  generations   Generation[]
+  apiKeys       ApiKey[]
+  auditLogs     AuditLog[]
+
+  @@map("users")
+}
+
+model Project {
+  id            String        @id @default(cuid())
+  userId        String
+  user          User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title         String
+  description   String?
+  locale        String        @default("ar")
+  status        ProjectStatus @default(DRAFT)
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  generations   Generation[]
+  mediaAssets   MediaAsset[]
+
+  @@index([userId])
+  @@map("projects")
+}
+
+model Generation {
+  id            String         @id @default(cuid())
+  userId        String
+  user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  projectId     String
+  project       Project        @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  type          GenerationType
+  status        JobStatus      @default(PENDING)
+  progress      Int            @default(0) // 0-100%
+  currentStep   String?
+  
+  // Quran References
+  surahNumber   Int?
+  ayahStart     Int?
+  ayahEnd       Int?
+  reciterId     Int?
+  
+  // Configuration and Results
+  aspectRatio   AspectRatio    @default(RATIO_9_16)
+  stylePreset   String?
+  customPrompt  String?
+  aiProvider    String?
+  aiModel       String?
+  config        Json           // Complete input parameters payload
+  result        Json?          // Summary or metadata of output
+  error         String?        // Detailed error message if failed
+  
+  // Queue tracking
+  jobId         String?        @unique // BullMQ Job ID
+  startedAt     DateTime?
+  completedAt   DateTime?
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  mediaAssets   MediaAsset[]
+
+  @@index([userId])
+  @@index([projectId])
+  @@index([status])
+  @@map("generations")
+}
+
+model MediaAsset {
+  id            String        @id @default(cuid())
+  userId        String
+  user          User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  projectId     String?
+  project       Project?      @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  generationId  String?
+  generation    Generation?   @relation(fields: [generationId], references: [id], onDelete: SetNull)
+  
+  type          MediaType
+  aspectRatio   AspectRatio?
+  mimeType      String
+  fileSize      BigInt
+  width         Int?
+  height        Int?
+  duration      Float?        // In seconds
+  
+  storageKey    String        @unique // S3 key
+  storageUrl    String        // Direct or public URL
+  thumbnailKey  String?
+  thumbnailUrl  String?
+  
+  metadata      Json?         // Bitrate, audio channels, color profile
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  @@index([userId])
+  @@index([projectId])
+  @@index([generationId])
+  @@map("media_assets")
+}
+
+model Reciter {
+  id            Int           @id // Matches Quran.com reciter ID
+  nameAr        String
+  nameEn        String
+  style         String?       // Murattal, Mujawwad
+  format        String        @default("mp3")
+  bitrate       Int           @default(128)
+  active        Boolean       @default(true)
+  createdAt     DateTime      @default(now())
+
+  @@map("reciters")
+}
+
+model ApiKey {
+  id            String        @id @default(cuid())
+  userId        String
+  user          User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name          String
+  keyHash       String        @unique
+  lastUsedAt    DateTime?
+  expiresAt     DateTime?
+  createdAt     DateTime      @default(now())
+
+  @@index([userId])
+  @@map("api_keys")
+}
+
+model AuditLog {
+  id            String        @id @default(cuid())
+  userId        String?
+  user          User?         @relation(fields: [userId], references: [id], onDelete: SetNull)
+  action        String
+  resource      String
+  resourceId    String?
+  details       Json?
+  ipAddress     String?
+  userAgent     String?
+  createdAt     DateTime      @default(now())
+
+  @@index([userId])
+  @@index([action])
+  @@map("audit_logs")
+}

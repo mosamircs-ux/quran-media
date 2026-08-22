@@ -1,0 +1,28 @@
+{
+  "name": "@quran-media/worker",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "main": "./dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsx watch src/index.ts",
+    "start": "node dist/index.js",
+    "clean": "rm -rf dist",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@quran-media/ai": "workspace:*",
+    "@quran-media/config": "workspace:*",
+    "@quran-media/database": "workspace:*",
+    "@quran-media/media": "workspace:*",
+    "@quran-media/quran": "workspace:*",
+    "bullmq": "^5.41.6",
+    "ioredis": "^5.5.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.4",
+    "tsx": "^4.19.3",
+    "typescript": "^5.7.3"
+  }
+}

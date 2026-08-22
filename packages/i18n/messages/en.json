@@ -1,0 +1,48 @@
+{
+  "app": {
+    "title": "Quran Media Studio",
+    "tagline": "AI-Powered Quranic Visuals, Recitations, and Stories with Cinematic Quality"
+  },
+  "nav": {
+    "dashboard": "Dashboard",
+    "projects": "Projects",
+    "studio": "Media Studio",
+    "media": "Media Assets",
+    "settings": "Settings"
+  },
+  "generator": {
+    "title": "Generate New Media",
+    "surahSelect": "Select Surah",
+    "ayahRange": "Ayah Range",
+    "fromAyah": "From Ayah",
+    "toAyah": "To Ayah",
+    "reciter": "Reciter",
+    "aspectRatio": "Aspect Ratio",
+    "stylePreset": "Visual Style",
+    "customPrompt": "Scene Description Prompt (Optional)",
+    "aiProvider": "AI Provider",
+    "generateButton": "Generate Media",
+    "generating": "Processing & Synthesizing...",
+    "status": {
+      "queued": "Queued",
+      "processing": "Processing",
+      "synthesizing": "Synthesizing Video & Audio",
+      "completed": "Completed Successfully",
+      "failed": "Generation Failed"
+    }
+  },
+  "aspectRatios": {
+    "9:16": "Portrait (9:16) - Reels & Shorts",
+    "16:9": "Landscape (16:9) - YouTube & Web",
+    "1:1": "Square (1:1) - Instagram & Twitter",
+    "4:5": "Portrait (4:5) - Feed Posts"
+  },
+  "common": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "download": "Download",
+    "preview": "Preview",
+    "loading": "Loading..."
+  }
+}
