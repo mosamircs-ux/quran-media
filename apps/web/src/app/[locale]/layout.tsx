@@ -9,16 +9,16 @@ import { Footer } from '../../components/footer';
 const inter = Inter({ subsets: ['latin'], variable: '--font-sans' });
 const amiri = Amiri({ subsets: ['arabic'], weight: ['400', '700'], variable: '--font-arabic' });
 
-export const metadata: Metadata = {
-  title: 'Quran Media Studio — Turn Every Ayah Into a Story',
-  description:
-    'Create beautiful Quran-inspired visual stories and videos from any Ayah or Surah with synchronized recitations, bilingual subtitles, and cinematic atmospheres.',
-  openGraph: {
-    title: 'Quran Media Studio — Turn Every Ayah Into a Story',
-    description: 'Create beautiful Quran-inspired visual stories and videos from any Ayah or Surah.',
-    type: 'website',
-  },
-};
+import { generateLocalizedMetadata } from '@/lib/seo';
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: Locale }>;
+}): Promise<Metadata> {
+  const { locale } = await params;
+  return generateLocalizedMetadata({ locale, pageKey: 'home' });
+}
 
 export default async function RootLayout({
   children,

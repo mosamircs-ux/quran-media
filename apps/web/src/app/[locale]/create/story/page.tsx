@@ -7,34 +7,15 @@ interface StoryPageProps {
   searchParams: Promise<{ surah?: string; ayah?: string; mode?: string }>;
 }
 
+import { generateLocalizedMetadata } from '@/lib/seo';
+
 export async function generateMetadata({ params }: StoryPageProps): Promise<Metadata> {
   const { locale } = await params;
-  const isAr = locale === 'ar';
-
-  const title = isAr
-    ? 'توليد القصص والمشاهد القرآنية بالذكاء الاصطناعي — استوديو ميديا القرآن'
-    : 'AI Quran Story Generator — Visual Narratives from Authentic Scripture';
-
-  const description = isAr
-    ? 'استوديو ذكي لتحويل أي آية كريمة إلى قصة مرئية ومشاهد سينمائية متسلسلة مبنية على التفسير المعتمد مع الالتزام التام بالضوابط الشرعية الإسلامية.'
-    : 'Generate structured visual Quranic stories and multi-scene cinematic storyboards from verified verses, classical Tafsir, and verified translations.';
-
-  return {
-    title,
-    description,
-    openGraph: {
-      title,
-      description,
-      type: 'website',
-      url: `https://quranmedia.studio/${locale}/create/story`,
-      siteName: isAr ? 'استوديو ميديا القرآن' : 'Quran Media Studio',
-    },
-    twitter: {
-      card: 'summary_large_image',
-      title,
-      description,
-    },
-  };
+  return generateLocalizedMetadata({
+    locale,
+    path: '/create/story',
+    pageKey: 'generator',
+  });
 }
 
 export default async function CreateStoryPage({ params, searchParams }: StoryPageProps) {

@@ -23,16 +23,24 @@ export function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // Determine preferred locale from headers
-  const acceptLanguage = request.headers.get('accept-language');
+  // Determine preferred locale from cookie, headers, or default
+  const cookieLocale = request.cookies.get('NEXT_LOCALE')?.value as Locale | undefined;
   let locale: Locale = DEFAULT_LOCALE;
 
-  if (acceptLanguage && acceptLanguage.includes('en') && !acceptLanguage.includes('ar')) {
-    locale = 'en';
+  if (cookieLocale && LOCALES.includes(cookieLocale)) {
+    locale = cookieLocale;
+  } else {
+    const acceptLanguage = request.headers.get('accept-language');
+    if (acceptLanguage && acceptLanguage.includes('en') && !acceptLanguage.includes('ar')) {
+      locale = 'en';
+    }
   }
 
   request.nextUrl.pathname = `/${locale}${pathname}`;
-  return NextResponse.redirect(request.nextUrl);
+  const response = NextResponse.redirect(request.nextUrl);
+  // Ensure cookie is set
+  response.cookies.set('NEXT_LOCALE', locale, { path: '/', maxAge: 31536000, sameSite: 'lax' });
+  return response;
 }
 
 export const config = {

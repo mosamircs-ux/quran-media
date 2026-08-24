@@ -3,64 +3,19 @@ import { type Locale } from '@quran-media/i18n';
 import { QURAN_STORIES, STORY_CATEGORIES } from '@/lib/stories-catalog';
 import { StoriesListClient } from '@/components/stories/stories-list-client';
 
+import { generateLocalizedMetadata } from '@/lib/seo';
+
 export async function generateMetadata({
   params,
 }: {
   params: Promise<{ locale: Locale }>;
 }): Promise<Metadata> {
   const { locale } = await params;
-  const isAr = locale === 'ar';
-
-  const title = isAr
-    ? 'قصص القرآن والتأملات الإيمانية — استكشف العبر والتفاسير المعتمدة'
-    : 'Quran Stories & Reflections — Explore Thematic Wisdom & Tafsir';
-
-  const description = isAr
-    ? 'مكتبة تفاعلية لقصص القرآن الكريم وتأملاته عبر 14 تصنيفاً: الأنبياء، الإيمان، الصبر، الرحمة، المغفرة، الجنة، وغيرها، مع تلاوات خاشعة وتفاسير معتمدة.'
-    : 'Interactive library of authentic Quranic stories and reflections across 14 categories: Prophets, Faith, Patience, Mercy, Forgiveness, Paradise, and more.';
-
-  return {
-    title,
-    description,
-    keywords: [
-      'Quran stories',
-      'Islamic reflections',
-      'Tafsir Ibn Kathir',
-      'Tafsir As-Sadi',
-      'Surah Yusuf',
-      'Companions of the cave',
-      'Prophets in Quran',
-      'قصص القرآن',
-      'تفسير القرآن',
-      'تدبر',
-    ],
-    openGraph: {
-      title,
-      description,
-      type: 'website',
-      images: [
-        {
-          url: 'https://images.unsplash.com/photo-1542816417-0983c9c9ad53?w=1200&auto=format&fit=crop&q=80',
-          width: 1200,
-          height: 630,
-          alt: title,
-        },
-      ],
-    },
-    twitter: {
-      card: 'summary_large_image',
-      title,
-      description,
-      images: ['https://images.unsplash.com/photo-1542816417-0983c9c9ad53?w=1200&auto=format&fit=crop&q=80'],
-    },
-    alternates: {
-      canonical: `/${locale}/stories`,
-      languages: {
-        ar: '/ar/stories',
-        en: '/en/stories',
-      },
-    },
-  };
+  return generateLocalizedMetadata({
+    locale,
+    path: '/stories',
+    pageKey: 'stories',
+  });
 }
 
 export default async function StoriesPage({

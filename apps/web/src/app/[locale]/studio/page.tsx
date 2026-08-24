@@ -2,15 +2,20 @@ import type { Metadata } from 'next';
 import { type Locale } from '@quran-media/i18n';
 import { StudioDashboardClient } from '@/components/studio/studio-dashboard-client';
 
-export const metadata: Metadata = {
-  title: 'Media Generation Studio — Quran Media',
-  description: 'Manage, customize, and render high-DPI Quranic video productions, recitations, and stories.',
-  openGraph: {
-    title: 'Media Generation Studio — Quran Media',
-    description: 'Real-time studio dashboard for generating cinematic Quran media with FFmpeg and AI.',
-    type: 'website',
-  },
-};
+import { generateLocalizedMetadata } from '@/lib/seo';
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: Locale }>;
+}): Promise<Metadata> {
+  const { locale } = await params;
+  return generateLocalizedMetadata({
+    locale,
+    path: '/studio',
+    pageKey: 'studio',
+  });
+}
 
 export default async function StudioPage({
   params,

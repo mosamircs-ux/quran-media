@@ -4,11 +4,23 @@ import type { Locale } from './config.js';
 
 export * from './config.js';
 
-export const messages: Record<Locale, typeof arMessages> = {
+export type TranslationDictionary = typeof arMessages;
+
+export const messages: Record<Locale, TranslationDictionary> = {
   ar: arMessages,
-  en: enMessages as typeof arMessages,
+  en: enMessages as TranslationDictionary,
 };
 
-export function getDictionary(locale: Locale) {
+export function getDictionary(locale: Locale): TranslationDictionary {
   return messages[locale] ?? messages.ar;
+}
+
+export function useTranslation(locale: Locale) {
+  const dict = getDictionary(locale);
+  return {
+    t: dict,
+    locale,
+    isAr: locale === 'ar',
+    dir: (locale === 'ar' ? 'rtl' : 'ltr') as 'rtl' | 'ltr',
+  };
 }
