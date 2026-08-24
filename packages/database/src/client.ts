@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient } from './generated/client/index.js';
 import { env, logger } from '@quran-media/config';
 
 declare global {

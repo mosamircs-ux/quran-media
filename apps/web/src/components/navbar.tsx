@@ -4,6 +4,8 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useTheme } from './theme-provider';
+import { useAuth } from './auth/auth-provider';
+import { AuthModal } from './auth/auth-modal';
 import { LanguageSwitcher } from './language-switcher';
 import { getDictionary, type Locale } from '@quran-media/i18n';
 import {
@@ -17,6 +19,10 @@ import {
   Compass,
   Bookmark,
   Feather,
+  User,
+  LayoutDashboard,
+  LogOut,
+  FolderKanban,
 } from 'lucide-react';
 
 interface NavbarProps {
@@ -25,7 +31,10 @@ interface NavbarProps {
 
 export function Navbar({ locale }: NavbarProps) {
   const { isDark, setTheme } = useTheme();
+  const { user, status, signOut } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [authModalOpen, setAuthModalOpen] = useState(false);
+  const [userDropdownOpen, setUserDropdownOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const pathname = usePathname();
   const dict = getDictionary(locale);
@@ -43,9 +52,9 @@ export function Navbar({ locale }: NavbarProps) {
     { href: `/${locale}`, label: dict.nav.home, icon: Compass },
     { href: `/${locale}/stories`, label: dict.nav.stories, icon: BookOpen },
     { href: `/${locale}/studio`, label: dict.nav.studio, icon: Sparkles },
+    { href: `/${locale}/dashboard`, label: isAr ? 'لوحة التحكم' : 'Dashboard', icon: LayoutDashboard },
     { href: `/${locale}/create/story`, label: dict.nav.storyGenerator, icon: Feather },
     { href: `/${locale}/create`, label: dict.nav.videoCreator, icon: Film },
-    { href: `/${locale}/surahs`, label: dict.nav.surahs, icon: Bookmark },
   ];
 
   return (
@@ -110,6 +119,71 @@ export function Navbar({ locale }: NavbarProps) {
             )}
           </button>
 
+          {/* User Profile / Sign In */}
+          {user ? (
+            <div className="relative">
+              <button
+                onClick={() => setUserDropdownOpen(!userDropdownOpen)}
+                className="flex items-center gap-2 p-1.5 pe-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-100/60 dark:bg-slate-900/60 text-slate-700 dark:text-slate-300 hover:bg-slate-200/80 dark:hover:bg-slate-800 transition-all cursor-pointer"
+              >
+                <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-emerald-600 to-amber-500 flex items-center justify-center text-white text-xs font-black shadow-sm">
+                  {user.image ? (
+                    <img src={user.image} alt={user.name} className="w-full h-full rounded-lg object-cover" />
+                  ) : (
+                    user.name.charAt(0)
+                  )}
+                </div>
+                <span className="text-xs font-semibold max-w-[100px] truncate">{user.name}</span>
+              </button>
+
+              {userDropdownOpen && (
+                <div className="absolute top-full mt-2 end-0 z-50 min-w-[200px] rounded-2xl border border-slate-200 dark:border-slate-800 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl shadow-2xl p-1.5 animate-in fade-in zoom-in-95">
+                  <div className="px-3 py-2 border-b border-slate-100 dark:border-slate-800">
+                    <p className="text-xs font-bold text-slate-900 dark:text-white truncate">{user.name}</p>
+                    <p className="text-[10px] text-slate-400 truncate">{user.email}</p>
+                  </div>
+
+                  <Link
+                    href={`/${locale}/dashboard`}
+                    onClick={() => setUserDropdownOpen(false)}
+                    className="flex items-center gap-2 px-3 py-2 text-xs font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors"
+                  >
+                    <LayoutDashboard className="w-4 h-4 text-emerald-500" />
+                    <span>{isAr ? 'لوحة التحكم والمكتبة' : 'My Dashboard & Library'}</span>
+                  </Link>
+
+                  <Link
+                    href={`/${locale}/studio`}
+                    onClick={() => setUserDropdownOpen(false)}
+                    className="flex items-center gap-2 px-3 py-2 text-xs font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors"
+                  >
+                    <FolderKanban className="w-4 h-4 text-amber-500" />
+                    <span>{isAr ? 'مشاريع الاستوديو' : 'Studio Projects'}</span>
+                  </Link>
+
+                  <button
+                    onClick={() => {
+                      setUserDropdownOpen(false);
+                      signOut();
+                    }}
+                    className="w-full flex items-center gap-2 px-3 py-2 text-xs font-medium text-rose-600 dark:text-rose-400 hover:bg-rose-500/10 rounded-xl transition-colors text-start cursor-pointer"
+                  >
+                    <LogOut className="w-4 h-4" />
+                    <span>{isAr ? 'تسجيل الخروج' : 'Sign Out'}</span>
+                  </button>
+                </div>
+              )}
+            </div>
+          ) : (
+            <button
+              onClick={() => setAuthModalOpen(true)}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-500/20 text-xs font-bold transition-all cursor-pointer"
+            >
+              <User className="w-3.5 h-3.5" />
+              <span>{isAr ? 'تسجيل الدخول' : 'Sign In'}</span>
+            </button>
+          )}
+
           {/* Create CTA Button */}
           <Link
             href={`/${locale}/create`}
@@ -122,6 +196,22 @@ export function Navbar({ locale }: NavbarProps) {
 
         {/* Mobile Menu Button */}
         <div className="flex sm:hidden items-center gap-2">
+          {user ? (
+            <Link
+              href={`/${locale}/dashboard`}
+              className="w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-600 to-amber-500 flex items-center justify-center text-white text-xs font-black shadow-sm"
+            >
+              {user.name.charAt(0)}
+            </Link>
+          ) : (
+            <button
+              onClick={() => setAuthModalOpen(true)}
+              className="p-2 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-xs font-bold"
+            >
+              <User className="w-4 h-4" />
+            </button>
+          )}
+
           <button
             onClick={() => setTheme(isDark ? 'light' : 'dark')}
             className="p-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-900 text-slate-700 dark:text-slate-300"
@@ -140,6 +230,13 @@ export function Navbar({ locale }: NavbarProps) {
           </button>
         </div>
       </div>
+
+      {/* Auth Modal */}
+      <AuthModal
+        isOpen={authModalOpen}
+        onClose={() => setAuthModalOpen(false)}
+        locale={locale}
+      />
 
       {/* Mobile Drawer Menu */}
       {mobileMenuOpen && (

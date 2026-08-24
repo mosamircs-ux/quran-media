@@ -30,7 +30,7 @@ export async function GET(
       currentStep: generation.currentStep,
       result: generation.result,
       error: generation.error,
-      mediaAssets: generation.mediaAssets.map((a) => ({
+      mediaAssets: (generation.mediaAssets as any[])?.map((a: any) => ({
         id: a.id,
         type: a.type,
         storageUrl: a.storageUrl,

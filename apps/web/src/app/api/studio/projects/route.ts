@@ -125,7 +125,7 @@ export async function GET(request: NextRequest) {
         orderBy: { updatedAt: 'desc' },
       });
 
-      studioProjects = projects.map((p) => {
+      studioProjects = (projects as any[])?.map((p: any) => {
         const latestGen = p.generations[0];
         const latestAsset = latestGen?.mediaAssets[0] || p.mediaAssets[0];
 

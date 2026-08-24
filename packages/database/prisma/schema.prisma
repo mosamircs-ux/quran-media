@@ -1,11 +1,16 @@
 generator client {
   provider = "prisma-client-js"
+  output   = "../src/generated/client"
 }
 
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
+
+// ==========================================
+// ENUMS
+// ==========================================
 
 enum Role {
   USER
@@ -16,6 +21,10 @@ enum Role {
 enum ProjectStatus {
   DRAFT
   ACTIVE
+  PROCESSING
+  RENDERING
+  COMPLETED
+  FAILED
   ARCHIVED
 }
 
@@ -23,6 +32,7 @@ enum GenerationType {
   TEXT
   STORY
   IMAGE
+  AUDIO
   VIDEO
 }
 
@@ -30,6 +40,9 @@ enum JobStatus {
   PENDING
   QUEUED
   PROCESSING
+  GENERATING_ASSETS
+  RENDERING
+  UPLOADING
   COMPLETED
   FAILED
   CANCELLED
@@ -40,6 +53,7 @@ enum MediaType {
   VIDEO
   AUDIO
   SUBTITLE
+  THUMBNAIL
 }
 
 enum AspectRatio {
@@ -49,153 +63,624 @@ enum AspectRatio {
   RATIO_4_5
 }
 
-model User {
-  id            String       @id @default(cuid())
-  email         String       @unique
-  name          String?
-  image         String?
-  role          Role         @default(USER)
-  locale        String       @default("ar")
-  createdAt     DateTime     @default(now())
-  updatedAt     DateTime     @updatedAt
-  projects      Project[]
-  mediaAssets   MediaAsset[]
-  generations   Generation[]
-  apiKeys       ApiKey[]
-  auditLogs     AuditLog[]
+enum SourceType {
+  TAFSIR
+  HADITH
+  HISTORICAL
+  SCHOLARLY
+}
 
+enum VerificationStatus {
+  VERIFIED
+  AUTHENTICATED
+  PENDING_REVIEW
+}
+
+enum SubscriptionPlan {
+  FREE
+  CREATOR_PRO
+  STUDIO_ENTERPRISE
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  TRIALING
+  PAST_DUE
+  CANCELLED
+  INCOMPLETE
+}
+
+enum PaymentStatus {
+  PENDING
+  SUCCEEDED
+  FAILED
+  REFUNDED
+}
+
+// ==========================================
+// 1. AUTHENTICATION & USERS
+// ==========================================
+
+model User {
+  id               String            @id @default(uuid())
+  email            String            @unique
+  name             String?
+  image            String?
+  passwordHash     String?
+  role             Role              @default(USER)
+  locale           String            @default("ar")
+  preferredReciter Int               @default(7) // Default: Mishari Rashid Alafasy
+  defaultRatio     AspectRatio       @default(RATIO_9_16)
+  emailVerified    DateTime?
+  isDeleted        Boolean           @default(false)
+  deletedAt        DateTime?
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+
+  accounts         Account[]
+  sessions         Session[]
+  mediaProjects    MediaProject[]
+  mediaAssets      MediaAsset[]
+  generationJobs   MediaGenerationJob[]
+  customTemplates  MediaTemplate[]
+  stories          Story[]
+  favorites        Favorite[]
+  bookmarks        Bookmark[]
+  shares           Share[]
+  usages           Usage[]
+  subscription     Subscription?
+  payments         Payment[]
+  apiKeys          ApiKey[]
+  apiUsages        ApiUsage[]
+  auditLogs        AuditLog[]
+
+  @@index([email])
+  @@index([isDeleted])
   @@map("users")
 }
 
-model Project {
-  id            String        @id @default(cuid())
-  userId        String
-  user          User          @relation(fields: [userId], references: [id], onDelete: Cascade)
-  title         String
-  description   String?
-  locale        String        @default("ar")
-  status        ProjectStatus @default(DRAFT)
-  createdAt     DateTime      @default(now())
-  updatedAt     DateTime      @updatedAt
-  generations   Generation[]
-  mediaAssets   MediaAsset[]
+model Account {
+  id                String   @id @default(uuid())
+  userId            String
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?  @db.Text
+  access_token      String?  @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?  @db.Text
+  session_state     String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
 
+  @@unique([provider, providerAccountId])
   @@index([userId])
-  @@map("projects")
+  @@map("accounts")
 }
 
-model Generation {
-  id            String         @id @default(cuid())
-  userId        String
-  user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
-  projectId     String
-  project       Project        @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  type          GenerationType
-  status        JobStatus      @default(PENDING)
-  progress      Int            @default(0) // 0-100%
-  currentStep   String?
-  
-  // Quran References
-  surahNumber   Int?
-  ayahStart     Int?
-  ayahEnd       Int?
-  reciterId     Int?
-  
-  // Configuration and Results
-  aspectRatio   AspectRatio    @default(RATIO_9_16)
-  stylePreset   String?
-  customPrompt  String?
-  aiProvider    String?
-  aiModel       String?
-  config        Json           // Complete input parameters payload
-  result        Json?          // Summary or metadata of output
-  error         String?        // Detailed error message if failed
-  
-  // Queue tracking
-  jobId         String?        @unique // BullMQ Job ID
-  startedAt     DateTime?
-  completedAt   DateTime?
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
-
-  mediaAssets   MediaAsset[]
+model Session {
+  id           String   @id @default(uuid())
+  sessionToken String   @unique
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expires      DateTime
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
   @@index([userId])
-  @@index([projectId])
+  @@map("sessions")
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+  @@map("verification_tokens")
+}
+
+// ==========================================
+// 2. QURAN CANONICAL KNOWLEDGE & CACHE
+// ==========================================
+
+model Surah {
+  id              String        @id @default(uuid())
+  number          Int           @unique
+  nameAr          String
+  nameEn          String
+  nameTranslation String
+  revelationType  String        // "Meccan" | "Medinan"
+  versesCount     Int
+  orderNumber     Int
+  bismillahPre    Boolean       @default(true)
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  verses          VerseCache[]
+  recitations     Recitation[]
+  stories         Story[]
+
+  @@index([number])
+  @@map("surahs")
+}
+
+model VerseCache {
+  id              String        @id @default(uuid())
+  verseKey        String        @unique // e.g. "2:255"
+  surahNumber     Int
+  surah           Surah         @relation(fields: [surahNumber], references: [number], onDelete: Restrict)
+  verseNumber     Int
+  juzNumber       Int
+  hizbNumber      Int
+  rubElHizbNumber Int
+  pageNumber      Int
+  textUthmani     String        @db.Text
+  textImlaei      String        @db.Text
+  textIndoPak     String?       @db.Text
+  wordsJson       Json?         // Word-by-word timestamps & translation JSONB
+  audioUrl        String?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  translations    Translation[]
+  tafsirs         Tafsir[]
+  mediaScenes     MediaScene[]
+
+  @@index([surahNumber, verseNumber])
+  @@index([pageNumber])
+  @@index([juzNumber])
+  @@map("verse_cache")
+}
+
+model Translation {
+  id              String      @id @default(uuid())
+  verseKey        String
+  verse           VerseCache  @relation(fields: [verseKey], references: [verseKey], onDelete: Cascade)
+  language        String      // "en", "ur", "id", "fr", etc.
+  authorName      String
+  source          String      // "Saheeh International", "Clear Quran", etc.
+  text            String      @db.Text
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  @@unique([verseKey, language, authorName])
+  @@index([verseKey])
+  @@index([language])
+  @@map("translations")
+}
+
+model Tafsir {
+  id              String      @id @default(uuid())
+  verseKey        String
+  verse           VerseCache  @relation(fields: [verseKey], references: [verseKey], onDelete: Cascade)
+  slug            String      // "ibn-kathir", "as-sadi", "al-baghawi", "al-qurtubi", "al-muyassar"
+  authorName      String
+  language        String      @default("ar")
+  text            String      @db.Text
+  sourceUrl       String?
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  @@unique([verseKey, slug])
+  @@index([verseKey])
+  @@index([slug])
+  @@map("tafsirs")
+}
+
+model Recitation {
+  id              String      @id @default(uuid())
+  reciterId       Int
+  reciterNameAr   String
+  reciterNameEn   String
+  style           String?     // "Murattal", "Mujawwad", "Muallim"
+  surahNumber     Int
+  surah           Surah       @relation(fields: [surahNumber], references: [number], onDelete: Restrict)
+  audioUrl        String
+  durationSeconds Float
+  format          String      @default("mp3")
+  bitrate         Int         @default(128)
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  @@unique([reciterId, surahNumber, style])
+  @@index([reciterId])
+  @@index([surahNumber])
+  @@map("recitations")
+}
+
+// ==========================================
+// 3. MEDIA STUDIO & PIPELINE
+// ==========================================
+
+model MediaProject {
+  id              String               @id @default(uuid())
+  userId          String
+  user            User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title           String
+  description     String?
+  status          ProjectStatus        @default(DRAFT)
+  aspectRatio     AspectRatio          @default(RATIO_9_16)
+  resolution      String               @default("1080p")
+  fps             Int                  @default(30)
+  isPublic        Boolean              @default(false)
+  config          Json                 // Complete MediaProject JSONB payload
+  isDeleted       Boolean              @default(false)
+  deletedAt       DateTime?
+  createdAt       DateTime             @default(now())
+  updatedAt       DateTime             @updatedAt
+
+  scenes          MediaScene[]
+  assets          MediaAsset[]
+  jobs            MediaGenerationJob[]
+  favorites       Favorite[]
+  shares          Share[]
+
+  @@index([userId, isDeleted])
   @@index([status])
-  @@map("generations")
+  @@map("media_projects")
+}
+
+model MediaScene {
+  id               String        @id @default(uuid())
+  projectId        String
+  project          MediaProject  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  sceneNumber      Int
+  duration         Float         // Duration in seconds
+  verseKey         String?
+  verse            VerseCache?   @relation(fields: [verseKey], references: [verseKey], onDelete: SetNull)
+  backgroundConfig Json          // Background gradient / AI prompt / video config JSONB
+  cameraMotion     Json          // Ken Burns / Zoom / Pan config JSONB
+  transitionConfig Json          // Transition effect & duration JSONB
+  orderNumber      Int
+  isDeleted        Boolean       @default(false)
+  deletedAt        DateTime?
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+
+  mediaAssets      MediaAsset[]
+
+  @@index([projectId, orderNumber])
+  @@index([verseKey])
+  @@map("media_scenes")
 }
 
 model MediaAsset {
-  id            String        @id @default(cuid())
-  userId        String
-  user          User          @relation(fields: [userId], references: [id], onDelete: Cascade)
-  projectId     String?
-  project       Project?      @relation(fields: [projectId], references: [id], onDelete: SetNull)
-  generationId  String?
-  generation    Generation?   @relation(fields: [generationId], references: [id], onDelete: SetNull)
-  
-  type          MediaType
-  aspectRatio   AspectRatio?
-  mimeType      String
-  fileSize      BigInt
-  width         Int?
-  height        Int?
-  duration      Float?        // In seconds
-  
-  storageKey    String        @unique // S3 key
-  storageUrl    String        // Direct or public URL
-  thumbnailKey  String?
-  thumbnailUrl  String?
-  
-  metadata      Json?         // Bitrate, audio channels, color profile
-  createdAt     DateTime      @default(now())
-  updatedAt     DateTime      @updatedAt
+  id           String        @id @default(uuid())
+  userId       String
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  projectId    String?
+  project      MediaProject? @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  sceneId      String?
+  scene        MediaScene?   @relation(fields: [sceneId], references: [id], onDelete: SetNull)
 
-  @@index([userId])
+  type         MediaType
+  aspectRatio  AspectRatio?
+  mimeType     String
+  fileSize     BigInt
+  width        Int?
+  height       Int?
+  duration     Float?        // In seconds
+
+  storageKey   String        @unique // S3 / MinIO storage key
+  storageUrl   String        // Direct CDN or presigned URL
+  thumbnailKey String?
+  thumbnailUrl String?
+
+  metadata     Json?         // Bitrate, color profile, audio waveforms JSONB
+  isDeleted    Boolean       @default(false)
+  deletedAt    DateTime?
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  favorites    Favorite[]
+
+  @@index([userId, isDeleted])
   @@index([projectId])
-  @@index([generationId])
+  @@index([type])
   @@map("media_assets")
 }
 
-model Reciter {
-  id            Int           @id // Matches Quran.com reciter ID
-  nameAr        String
-  nameEn        String
-  style         String?       // Murattal, Mujawwad
-  format        String        @default("mp3")
-  bitrate       Int           @default(128)
-  active        Boolean       @default(true)
-  createdAt     DateTime      @default(now())
+model MediaTemplate {
+  id                    String        @id @default(uuid())
+  templateId            String        @unique // e.g. "cinematic_nature"
+  nameAr                String
+  nameEn                String
+  category              String
+  supportedAspectRatios String[]
+  config                Json          // Fonts, colors, animation, audio, scene structure JSONB
+  isOfficial            Boolean       @default(true)
+  isCustom              Boolean       @default(false)
+  createdById           String?
+  createdBy             User?         @relation(fields: [createdById], references: [id], onDelete: SetNull)
+  isDeleted             Boolean       @default(false)
+  deletedAt             DateTime?
+  createdAt             DateTime      @default(now())
+  updatedAt             DateTime      @updatedAt
 
-  @@map("reciters")
+  @@index([category])
+  @@index([isOfficial])
+  @@map("media_templates")
+}
+
+model MediaGenerationJob {
+  id          String         @id @default(uuid())
+  jobId       String         @unique // BullMQ / Redis queue job ID
+  userId      String
+  user        User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  projectId   String?
+  project     MediaProject?  @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  type        GenerationType
+  status      JobStatus      @default(PENDING)
+  progress    Int            @default(0) // 0-100%
+  currentStep String?
+  priority    Int            @default(0)
+  attempts    Int            @default(0)
+  maxAttempts Int            @default(3)
+  payload     Json           // Input parameters JSONB
+  result      Json?          // Output deliverable URLs and render metrics JSONB
+  error       String?        @db.Text
+  startedAt   DateTime?
+  completedAt DateTime?
+  isDeleted   Boolean        @default(false)
+  deletedAt   DateTime?
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  @@index([userId, status])
+  @@index([projectId])
+  @@index([status])
+  @@map("media_generation_jobs")
+}
+
+// ==========================================
+// 4. STORIES CATALOG & NARRATIVES
+// ==========================================
+
+model Story {
+  id              String        @id @default(uuid())
+  slug            String        @unique
+  userId          String?
+  user            User?         @relation(fields: [userId], references: [id], onDelete: SetNull)
+  titleAr         String
+  titleEn         String
+  descriptionAr   String?       @db.Text
+  descriptionEn   String?       @db.Text
+  category        String        // e.g. prophets, patience, reflection
+  surahNumber     Int
+  surah           Surah         @relation(fields: [surahNumber], references: [number], onDelete: Restrict)
+  ayahStart       Int
+  ayahEnd         Int
+  durationSeconds Int           @default(120)
+  viewsCount      Int           @default(0)
+  savesCount      Int           @default(0)
+  sharesCount     Int           @default(0)
+  videoUrl        String?
+  thumbnailUrl    String?
+  published       Boolean       @default(true)
+  isDeleted       Boolean       @default(false)
+  deletedAt       DateTime?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  scenes          StoryScene[]
+  sources         StorySource[]
+  favorites       Favorite[]
+  shares          Share[]
+
+  @@index([category, published])
+  @@index([surahNumber])
+  @@map("stories")
+}
+
+model StoryScene {
+  id                 String        @id @default(uuid())
+  storyId            String
+  story              Story         @relation(fields: [storyId], references: [id], onDelete: Cascade)
+  sceneNumber        Int
+  duration           Float
+  narrationTextAr    String        @db.Text
+  narrationTextEn    String        @db.Text
+  visualDescription  String        @db.Text
+  cameraMovement     String
+  audioSoundscape    String?
+  transition         String
+  orderNumber        Int
+  createdAt          DateTime      @default(now())
+  updatedAt          DateTime      @updatedAt
+
+  @@index([storyId, orderNumber])
+  @@map("story_scenes")
+}
+
+model StorySource {
+  id                 String             @id @default(uuid())
+  storyId            String
+  story              Story              @relation(fields: [storyId], references: [id], onDelete: Cascade)
+  sourceName         String             // e.g. "Tafsir Ibn Kathir"
+  author             String             // "Imam Ibn Kathir"
+  type               SourceType         @default(TAFSIR)
+  referenceBook      String
+  volumePage         String?
+  verificationStatus VerificationStatus @default(VERIFIED)
+  verificationNotes  String?            @db.Text
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+
+  @@index([storyId])
+  @@map("story_sources")
+}
+
+// ==========================================
+// 5. ENGAGEMENT & SOCIAL
+// ==========================================
+
+model Bookmark {
+  id              String      @id @default(uuid())
+  userId          String
+  user            User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  verseKey        String      // e.g. "2:255"
+  notes           String?     @db.Text
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  @@unique([userId, verseKey])
+  @@index([userId])
+  @@index([verseKey])
+  @@map("bookmarks")
+}
+
+model Favorite {
+  id           String        @id @default(uuid())
+  userId       String
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  storyId      String?
+  story        Story?        @relation(fields: [storyId], references: [id], onDelete: Cascade)
+  projectId    String?
+  project      MediaProject? @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  mediaAssetId String?
+  mediaAsset   MediaAsset?   @relation(fields: [mediaAssetId], references: [id], onDelete: Cascade)
+  createdAt    DateTime      @default(now())
+
+  @@unique([userId, storyId])
+  @@unique([userId, projectId])
+  @@unique([userId, mediaAssetId])
+  @@index([userId])
+  @@map("favorites")
+}
+
+model Share {
+  id             String        @id @default(uuid())
+  shareToken     String        @unique
+  userId         String?
+  user           User?         @relation(fields: [userId], references: [id], onDelete: SetNull)
+  projectId      String?
+  project        MediaProject? @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  storyId        String?
+  story          Story?        @relation(fields: [storyId], references: [id], onDelete: Cascade)
+  isPublic       Boolean       @default(true)
+  accessCount    Int           @default(0)
+  lastAccessedAt DateTime?
+  expiresAt      DateTime?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  @@index([shareToken])
+  @@index([userId])
+  @@map("shares")
+}
+
+// ==========================================
+// 6. BILLING, USAGE & TELEMETRY
+// ==========================================
+
+model Usage {
+  id                  String   @id @default(uuid())
+  userId              String
+  user                User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  billingPeriod       String   // "YYYY-MM" e.g. "2026-08"
+  renderedSeconds     Int      @default(0)
+  storageBytes        BigInt   @default(0)
+  aiPromptTokens      Int      @default(0)
+  aiCompletionTokens  Int      @default(0)
+  totalJobsCount      Int      @default(0)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  @@unique([userId, billingPeriod])
+  @@index([userId])
+  @@map("usages")
+}
+
+model Subscription {
+  id                   String             @id @default(uuid())
+  userId               String             @unique
+  user                 User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  plan                 SubscriptionPlan   @default(FREE)
+  status               SubscriptionStatus @default(ACTIVE)
+  currentPeriodStart   DateTime           @default(now())
+  currentPeriodEnd     DateTime
+  cancelAtPeriodEnd    Boolean            @default(false)
+  stripeCustomerId     String?            @unique
+  stripeSubscriptionId String?            @unique
+  createdAt            DateTime           @default(now())
+  updatedAt            DateTime           @updatedAt
+
+  @@index([status])
+  @@map("subscriptions")
+}
+
+model Payment {
+  id                String        @id @default(uuid())
+  userId            String
+  user              User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  amount            Int           // in cents / minor units (e.g. 2900 = $29.00)
+  currency          String        @default("USD")
+  status            PaymentStatus @default(PENDING)
+  provider          String        @default("stripe")
+  providerPaymentId String?       @unique
+  receiptUrl        String?
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+
+  @@index([userId])
+  @@index([status])
+  @@map("payments")
 }
 
 model ApiKey {
-  id            String        @id @default(cuid())
-  userId        String
-  user          User          @relation(fields: [userId], references: [id], onDelete: Cascade)
-  name          String
-  keyHash       String        @unique
-  lastUsedAt    DateTime?
-  expiresAt     DateTime?
-  createdAt     DateTime      @default(now())
+  id         String     @id @default(uuid())
+  userId     String
+  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name       String
+  keyHash    String     @unique
+  lastUsedAt DateTime?
+  expiresAt  DateTime?
+  createdAt  DateTime   @default(now())
+
+  apiUsages  ApiUsage[]
 
   @@index([userId])
   @@map("api_keys")
 }
 
+model ApiUsage {
+  id         String    @id @default(uuid())
+  userId     String
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  apiKeyId   String?
+  apiKey     ApiKey?   @relation(fields: [apiKeyId], references: [id], onDelete: SetNull)
+  endpoint   String
+  method     String
+  statusCode Int
+  durationMs Int
+  ipAddress  String?
+  userAgent  String?
+  createdAt  DateTime  @default(now())
+
+  @@index([userId, createdAt])
+  @@index([endpoint])
+  @@map("api_usages")
+}
+
+// ==========================================
+// 7. SECURITY & GOVERNANCE
+// ==========================================
+
 model AuditLog {
-  id            String        @id @default(cuid())
-  userId        String?
-  user          User?         @relation(fields: [userId], references: [id], onDelete: SetNull)
-  action        String
-  resource      String
-  resourceId    String?
-  details       Json?
-  ipAddress     String?
-  userAgent     String?
-  createdAt     DateTime      @default(now())
+  id         String   @id @default(uuid())
+  userId     String?
+  user       User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  action     String
+  resource   String
+  resourceId String?
+  details    Json?
+  ipAddress  String?
+  userAgent  String?
+  createdAt  DateTime @default(now())
 
   @@index([userId])
   @@index([action])

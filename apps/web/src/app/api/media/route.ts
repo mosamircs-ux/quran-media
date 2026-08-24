@@ -26,7 +26,7 @@ export async function GET(request: NextRequest) {
   return NextResponse.json({
     success: true,
     data: {
-      assets: assets.map((a) => ({
+      assets: (assets as any[])?.map((a: any) => ({
         id: a.id,
         type: a.type,
         aspectRatio: a.aspectRatio,
