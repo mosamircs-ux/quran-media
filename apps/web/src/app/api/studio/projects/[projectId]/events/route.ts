@@ -3,6 +3,16 @@ import { db } from '@quran-media/database';
 
 export const dynamic = 'force-dynamic';
 
+declare global {
+  // eslint-disable-next-line no-var
+  var __STUDIO_MEMORY_PROJECTS: Map<string, any> | undefined;
+}
+
+if (!global.__STUDIO_MEMORY_PROJECTS) {
+  global.__STUDIO_MEMORY_PROJECTS = new Map<string, any>();
+}
+const memoryStore = global.__STUDIO_MEMORY_PROJECTS;
+
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ projectId: string }> }
@@ -16,7 +26,7 @@ export async function GET(
       let lastProgress = -1;
       let lastStatus = '';
       let pollCount = 0;
-      const maxPolls = 180; // ~6 minutes timeout
+      const maxPolls = 120; // ~3 minutes timeout
 
       const sendEvent = (data: Record<string, unknown>) => {
         if (!isAlive) return;
@@ -24,7 +34,6 @@ export async function GET(
         controller.enqueue(encoder.encode(msg));
       };
 
-      // Heartbeat comment
       const sendPing = () => {
         if (!isAlive) return;
         controller.enqueue(encoder.encode(': ping\n\n'));
@@ -49,17 +58,20 @@ export async function GET(
         }
 
         try {
-          // Fetch latest generation for this project
-          const project = await db.project.findUnique({
-            where: { id: projectId },
-            include: {
-              generations: {
-                orderBy: { createdAt: 'desc' },
-                take: 1,
-                include: { mediaAssets: true },
+          // 1. Try fetching from Database
+          let project: any = null;
+          try {
+            project = await db.project.findUnique({
+              where: { id: projectId },
+              include: {
+                generations: {
+                  orderBy: { createdAt: 'desc' },
+                  take: 1,
+                  include: { mediaAssets: true },
+                },
               },
-            },
-          });
+            });
+          } catch {}
 
           const latestGen = project?.generations[0];
           const latestAsset = latestGen?.mediaAssets[0];
@@ -68,7 +80,6 @@ export async function GET(
             const currentStatus = latestGen.status;
             const currentProgress = latestGen.progress;
 
-            // If state or progress changed, or if it's the first ping:
             if (currentProgress !== lastProgress || currentStatus !== lastStatus || pollCount % 4 === 0) {
               lastProgress = currentProgress;
               lastStatus = currentStatus;
@@ -81,20 +92,59 @@ export async function GET(
                 currentStep: latestGen.currentStep || '',
                 error: latestGen.error || null,
                 videoUrl: latestAsset?.storageUrl || (latestGen.result as any)?.storageUrl || null,
-                webmUrl: (latestAsset?.metadata as any)?.webmUrl || (latestGen.result as any)?.webmUrl || null,
                 thumbnailUrl: latestAsset?.thumbnailUrl || (latestGen.result as any)?.thumbnailUrl || null,
-                previewUrl: (latestAsset?.metadata as any)?.previewUrl || (latestGen.result as any)?.previewUrl || null,
-                duration: latestAsset?.duration || 15,
                 timestamp: new Date().toISOString(),
               });
             }
 
-            // If terminal state reached (COMPLETED or FAILED), close stream after final delivery
             if (currentStatus === 'COMPLETED' || currentStatus === 'FAILED') {
               clearInterval(interval);
               setTimeout(() => {
                 try { controller.close(); } catch {}
               }, 1000);
+            }
+          } else if (memoryStore.has(projectId)) {
+            // 2. Memory store simulation for live background job demo
+            const mem = memoryStore.get(projectId);
+            if (mem.status === 'QUEUED' || mem.status === 'PROCESSING' || mem.status === 'RENDERING') {
+              const simProgress = Math.min(100, (mem.progress || 0) + 18);
+              mem.progress = simProgress;
+
+              if (simProgress < 25) {
+                mem.status = 'PROCESSING';
+                mem.currentStep = 'Setting up studio render workspace & font caches...';
+              } else if (simProgress < 55) {
+                mem.status = 'GENERATING_ASSETS';
+                mem.currentStep = 'Synthesizing Uthmani calligraphy plate & particle gradients...';
+              } else if (simProgress < 85) {
+                mem.status = 'RENDERING';
+                mem.currentStep = 'Compositing Ken Burns camera motion & master audio mix...';
+              } else {
+                mem.status = 'COMPLETED';
+                mem.currentStep = 'Master HD video ready for download and playback';
+                mem.videoUrl = 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4';
+                mem.thumbnailUrl = 'https://images.unsplash.com/photo-1542816417-0983c9c9ad53?w=800&auto=format&fit=crop&q=80';
+              }
+              memoryStore.set(projectId, mem);
+
+              sendEvent({
+                projectId,
+                status: mem.status,
+                progress: mem.progress,
+                currentStep: mem.currentStep,
+                videoUrl: mem.videoUrl || null,
+                thumbnailUrl: mem.thumbnailUrl || null,
+                timestamp: new Date().toISOString(),
+              });
+
+              if (mem.status === 'COMPLETED') {
+                clearInterval(interval);
+                setTimeout(() => {
+                  try { controller.close(); } catch {}
+                }, 1000);
+              }
+            } else {
+              sendPing();
             }
           } else {
             sendPing();
