@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import type { Locale } from '@quran-media/i18n';
-import type { QuranStory } from '@/lib/stories-catalog';
+import type { QuranStory, StorySlide } from '@/lib/stories-catalog';
 import {
   BookOpen,
   Sparkles,
@@ -34,7 +34,22 @@ export function StoryReaderClient({ story, locale }: StoryReaderClientProps) {
   const [audioInstance, setAudioInstance] = useState<HTMLAudioElement | null>(null);
   const [copiedShare, setCopiedShare] = useState(false);
 
-  const currentSlide = story.slides[currentSlideIndex] ?? story.slides[0]!;
+  const fallbackSlides: StorySlide[] = [
+    {
+      slideNumber: 1,
+      titleAr: story.titleAr,
+      titleEn: story.titleEn,
+      arabicText: story.arabicVerseText,
+      translation: story.translationText,
+      verseKey: story.ayahRange,
+      reflectionAr: story.shortSummaryAr,
+      reflectionEn: story.shortSummaryEn,
+      visualAtmosphere: 'Deep celestial background with glowing golden calligraphy',
+    },
+  ];
+
+  const slides: StorySlide[] = story.slides && story.slides.length > 0 ? story.slides : fallbackSlides;
+  const currentSlide = slides[currentSlideIndex] ?? slides[0]!;
 
   useEffect(() => {
     return () => {
@@ -57,7 +72,7 @@ export function StoryReaderClient({ story, locale }: StoryReaderClientProps) {
   };
 
   const nextSlide = () => {
-    if (currentSlideIndex < story.slides.length - 1) {
+    if (currentSlideIndex < slides.length - 1) {
       setCurrentSlideIndex((prev) => prev + 1);
     }
   };
@@ -68,68 +83,67 @@ export function StoryReaderClient({ story, locale }: StoryReaderClientProps) {
     }
   };
 
-  const handleShare = () => {
-    navigator.clipboard.writeText(window.location.href);
-    setCopiedShare(true);
-    setTimeout(() => setCopiedShare(false), 2000);
+  const copyShareLink = () => {
+    if (typeof window !== 'undefined') {
+      navigator.clipboard.writeText(window.location.href);
+      setCopiedShare(true);
+      setTimeout(() => setCopiedShare(false), 2000);
+    }
   };
 
   return (
-    <div className="space-y-10 pb-20">
+    <div className="space-y-8 animate-in fade-in duration-300">
       
-      {/* Breadcrumb Navigation */}
-      <nav className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
-        <Link href={`/${locale}`} className="hover:text-amber-500 transition-colors">
-          {isAr ? 'الرئيسية' : 'Home'}
-        </Link>
-        <span>/</span>
-        <Link href={`/${locale}/stories`} className="hover:text-amber-500 transition-colors">
-          {isAr ? 'القصص' : 'Stories'}
-        </Link>
-        <span>/</span>
-        <span className="font-bold text-slate-800 dark:text-slate-200">
-          {isAr ? story.titleAr : story.titleEn}
-        </span>
-      </nav>
+      {/* Top Header Card */}
+      <div className="p-6 sm:p-8 rounded-3xl border border-slate-200/80 dark:border-slate-800/80 bg-white dark:bg-slate-900 shadow-xl space-y-6">
+        <div className="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-slate-100 dark:border-slate-800">
+          <Link
+            href={`/${locale}/stories`}
+            className="flex items-center gap-1.5 text-xs font-bold text-slate-500 hover:text-amber-500 transition-colors"
+          >
+            {isAr ? <ArrowRight className="w-4 h-4" /> : <ArrowLeft className="w-4 h-4" />}
+            <span>{isAr ? 'العودة لكافة القصص' : 'Back to Stories'}</span>
+          </Link>
 
-      {/* Story Header Banner */}
-      <div className="p-6 sm:p-8 rounded-3xl border border-slate-200/80 dark:border-slate-800/80 bg-white dark:bg-slate-900 shadow-xl space-y-4">
-        <div className="flex flex-wrap items-center justify-between gap-4">
-          <div className="flex items-center gap-2">
-            <span className="px-3 py-1 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 font-bold text-xs border border-amber-500/20">
-              {isAr ? story.categoryNameAr : story.categoryNameEn}
-            </span>
-            <span className="text-xs text-slate-500 font-semibold px-2.5 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800">
-              {isAr ? `سورة ${story.surahNameAr} [${story.ayahRange}]` : `Surah ${story.surahNameEn} [${story.ayahRange}]`}
-            </span>
-          </div>
-
-          {/* Audio Player & Share */}
           <div className="flex items-center gap-2">
             <button
-              onClick={toggleAudio}
-              className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs shadow transition-transform cursor-pointer"
+              onClick={copyShareLink}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-800 text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all cursor-pointer"
             >
-              {isPlayingAudio ? <Pause className="w-3.5 h-3.5 fill-current" /> : <Play className="w-3.5 h-3.5 fill-current ml-0.5" />}
-              <span>{isPlayingAudio ? (isAr ? 'إيقاف التلاوة' : 'Pause') : (isAr ? 'استماع للتلاوة' : 'Listen')}</span>
+              {copiedShare ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Share2 className="w-3.5 h-3.5" />}
+              <span>{copiedShare ? (isAr ? 'تم النسخ' : 'Copied') : (isAr ? 'مشاركة' : 'Share')}</span>
             </button>
 
             <button
-              onClick={handleShare}
-              className="p-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white"
+              onClick={toggleAudio}
+              className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all shadow-sm cursor-pointer ${
+                isPlayingAudio
+                  ? 'bg-amber-500 text-slate-950 shadow-amber-500/20'
+                  : 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20'
+              }`}
             >
-              {copiedShare ? <Check className="w-4 h-4 text-emerald-500" /> : <Share2 className="w-4 h-4" />}
+              {isPlayingAudio ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5 fill-current" />}
+              <span>{isPlayingAudio ? (isAr ? 'إيقاف التلاوة' : 'Pause Recitation') : (isAr ? 'استماع للتلاوة' : 'Listen to Recitation')}</span>
             </button>
           </div>
         </div>
 
-        <h1 className="text-2xl sm:text-4xl font-extrabold text-slate-900 dark:text-white tracking-tight">
-          {isAr ? story.titleAr : story.titleEn}
-        </h1>
+        <div className="space-y-2">
+          <div className="flex items-center gap-2 text-xs font-bold text-amber-600 dark:text-amber-400">
+            <BookOpen className="w-4 h-4" />
+            <span>{isAr ? `سورة ${story.surahNameAr} [${story.ayahRange}]` : `Surah ${story.surahNameEn} [${story.ayahRange}]`}</span>
+            <span>•</span>
+            <span>{isAr ? story.categoryNameAr : story.categoryNameEn}</span>
+          </div>
 
-        <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
-          {isAr ? story.shortSummaryAr : story.shortSummaryEn}
-        </p>
+          <h1 className="text-2xl sm:text-4xl font-black text-slate-900 dark:text-white tracking-tight">
+            {isAr ? story.titleAr : story.titleEn}
+          </h1>
+
+          <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 max-w-3xl leading-relaxed">
+            {isAr ? story.shortSummaryAr : story.shortSummaryEn}
+          </p>
+        </div>
       </div>
 
       {/* Main Interactive Slide-by-Slide Contemplation Stage */}
@@ -138,11 +152,11 @@ export function StoryReaderClient({ story, locale }: StoryReaderClientProps) {
         {/* Slide Progress Indicator */}
         <div className="flex items-center justify-between text-xs text-slate-500 pb-4 border-b border-slate-100 dark:border-slate-800">
           <span className="font-bold text-amber-600 dark:text-amber-400">
-            {isAr ? `الشريحة ${currentSlideIndex + 1} من ${story.slides.length}` : `Slide ${currentSlideIndex + 1} of ${story.slides.length}`}
+            {isAr ? `الشريحة ${currentSlideIndex + 1} من ${slides.length}` : `Slide ${currentSlideIndex + 1} of ${slides.length}`}
           </span>
 
           <div className="flex items-center gap-1.5">
-            {story.slides.map((_, i) => (
+            {slides.map((_: any, i: number) => (
               <button
                 key={i}
                 onClick={() => setCurrentSlideIndex(i)}
@@ -162,11 +176,11 @@ export function StoryReaderClient({ story, locale }: StoryReaderClientProps) {
 
           {/* Verse Display */}
           <div className="p-6 rounded-3xl bg-amber-500/5 border border-amber-500/20 text-center space-y-3">
-            <p dir="rtl" className="font-quran text-2xl sm:text-3xl text-slate-900 dark:text-amber-100 leading-loose">
+            <p dir="rtl" className="font-amiri text-2xl sm:text-3xl text-slate-900 dark:text-amber-100 leading-loose">
               {currentSlide.arabicText}
             </p>
             <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 italic max-w-xl mx-auto">
-              "{currentSlide.translation}"
+              &ldquo;{currentSlide.translation}&rdquo;
             </p>
             <span className="text-[11px] font-bold text-amber-600 dark:text-amber-400 block">
               [Surah {story.surahNameEn} - {currentSlide.verseKey}]
@@ -191,7 +205,7 @@ export function StoryReaderClient({ story, locale }: StoryReaderClientProps) {
                 {isAr ? 'الأجواء البصرية المقترحة للإنتاج:' : 'Suggested Visual Atmosphere for Media:'}
               </span>
               <p className="text-slate-600 dark:text-slate-400 mt-0.5 font-mono">
-                "{currentSlide.visualAtmosphere}"
+                &ldquo;{currentSlide.visualAtmosphere}&rdquo;
               </p>
             </div>
           </div>
@@ -211,7 +225,7 @@ export function StoryReaderClient({ story, locale }: StoryReaderClientProps) {
 
             <button
               onClick={nextSlide}
-              disabled={currentSlideIndex === story.slides.length - 1}
+              disabled={currentSlideIndex === slides.length - 1}
               className="flex items-center gap-1 px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-800 text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 disabled:opacity-30 cursor-pointer"
             >
               <span>{isAr ? 'التالي' : 'Next'}</span>
@@ -242,7 +256,7 @@ export function StoryReaderClient({ story, locale }: StoryReaderClientProps) {
             {isAr ? 'الخلاصة التفسيرية والسياق القرآني' : 'Scholarly Context & Tafsir'}
           </h4>
           <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
-            {isAr ? story.tafsirOverviewAr : story.tafsirOverviewEn}
+            {isAr ? (story.tafsirSummaryAr || story.tafsirOverviewAr) : (story.tafsirSummaryEn || story.tafsirOverviewEn)}
           </p>
         </div>
 

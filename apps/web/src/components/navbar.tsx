@@ -44,13 +44,11 @@ export function Navbar({ locale }: NavbarProps) {
 
   const navLinks = [
     { href: `/${locale}`, label: isAr ? 'الرئيسية' : 'Home', icon: Compass },
-    { href: `/${locale}/create/story`, label: isAr ? 'صانع القصص' : 'AI Story Studio', icon: Feather },
-    { href: `/${locale}/create`, label: isAr ? 'استوديو الفيديو' : 'Video Studio', icon: Sparkles },
-    { href: `/${locale}/stories`, label: isAr ? 'المكتبة' : 'Stories', icon: Layers },
-    { href: `/${locale}/ayahs`, label: isAr ? 'الآيات' : 'Ayahs', icon: Bookmark },
-    { href: `/${locale}/surahs`, label: isAr ? 'السور' : 'Surahs', icon: BookOpen },
-    { href: `/${locale}/videos`, label: isAr ? 'المقاطع' : 'Videos', icon: Film },
-    { href: `/${locale}/dashboard`, label: isAr ? 'لوحة التحكم' : 'Dashboard', icon: Compass },
+    { href: `/${locale}/stories`, label: isAr ? 'قصص القرآن' : 'Stories', icon: BookOpen },
+    { href: `/${locale}/studio`, label: isAr ? 'الاستوديو' : 'Studio', icon: Sparkles },
+    { href: `/${locale}/create/story`, label: isAr ? 'مولد القصص' : 'AI Story Generator', icon: Feather },
+    { href: `/${locale}/create`, label: isAr ? 'إنتاج فيديو' : 'Video Creator', icon: Film },
+    { href: `/${locale}/surahs`, label: isAr ? 'المصحف' : 'Surahs', icon: Bookmark },
   ];
 
   const switchLocale = (newLocale: Locale) => {
