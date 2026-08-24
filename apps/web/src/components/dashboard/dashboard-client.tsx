@@ -19,6 +19,7 @@ import {
   Download,
   Share2,
   Play,
+  BookOpen,
 } from 'lucide-react';
 
 interface GenerationJobItem {

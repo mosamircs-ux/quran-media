@@ -1,15 +1,15 @@
 import { NextResponse, type NextRequest } from 'next/server';
-import { getVersesBySurah } from '@quran-media/quran';
+import { quranVerseService } from '@quran-media/quran';
 import { logger } from '@quran-media/config';
 
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;
-  const surah = Number(searchParams.get('surah'));
-  const fromAyah = searchParams.get('from') ? Number(searchParams.get('from')) : 1;
-  const toAyah = searchParams.get('to') ? Number(searchParams.get('to')) : undefined;
+  const surah = Number(searchParams.get('surah') || searchParams.get('surahId'));
+  const fromAyah = searchParams.get('from') || searchParams.get('fromVerse') ? Number(searchParams.get('from') || searchParams.get('fromVerse')) : 1;
+  const toAyah = searchParams.get('to') || searchParams.get('toVerse') ? Number(searchParams.get('to') || searchParams.get('toVerse')) : undefined;
   const locale = (searchParams.get('locale') as 'ar' | 'en') || 'ar';
-  const translationId = searchParams.get('translationId')
-    ? Number(searchParams.get('translationId'))
+  const translationId = searchParams.get('translationId') || searchParams.get('translationIds')
+    ? Number(searchParams.get('translationId') || searchParams.get('translationIds'))
     : 131;
 
   if (!surah || surah < 1 || surah > 114) {
@@ -23,12 +23,12 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const verses = await getVersesBySurah({
-      surah,
-      fromAyah,
-      toAyah,
+    const verses = await quranVerseService.getVersesByChapter({
+      surahId: surah,
+      fromVerse: fromAyah,
+      toVerse: toAyah,
       locale,
-      translationId,
+      translationIds: [translationId],
     });
 
     return NextResponse.json(

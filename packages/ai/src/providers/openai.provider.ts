@@ -218,14 +218,15 @@ Return ONLY a valid JSON object matching this schema:
         n: 1,
       });
 
-      const url = response.data[0]?.url;
+      const firstImage = response.data?.[0];
+      const url = firstImage?.url;
       if (!url) throw new Error('No image URL returned from OpenAI');
 
       return {
         url,
         provider: this.id,
         model: options.model || 'dall-e-3',
-        revisedPrompt: response.data[0]?.revised_prompt,
+        revisedPrompt: firstImage?.revised_prompt,
       };
     } catch (err) {
       throw new AiProviderError('OpenAI image generation failed', err);

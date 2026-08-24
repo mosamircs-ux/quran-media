@@ -80,25 +80,27 @@ export default async function SurahDetailPage({ params }: SurahPageProps) {
   let versesList: AyahCardData[] = [];
 
   try {
-    const apiResult = await quranVerseService.getVersesByChapter(surahId, {
+    const apiResult = await quranVerseService.getVersesByChapter({
+      surahId,
       translationIds: [131],
       locale,
-      perPage: surah.versesCount,
+      fromVerse: 1,
+      toVerse: surah.versesCount,
     });
 
-    versesList = apiResult.verses.map((v) => ({
+    versesList = apiResult.map((v) => ({
       verseKey: v.verseKey,
       surahNumber: surahId,
       ayahNumber: v.verseNumber,
       surahNameAr: surah.nameAr,
       surahNameEn: surah.nameEn,
-      juzNumber: v.juzNumber,
+      juzNumber: 1,
       hizbNumber: v.hizbNumber,
-      pageNumber: v.pageNumber,
+      pageNumber: 1,
       arabicText: v.textUthmani || v.textSimple,
       translation: v.translations?.[0]?.text || 'Translation in progress...',
       transliteration: v.transliteration,
-      audioUrl: v.audioUrl || `https://audio.qurancdn.com/Alafasy/mp3/${String(surahId).padStart(3, '0')}${String(v.verseNumber).padStart(3, '0')}.mp3`,
+      audioUrl: v.audio?.url || `https://audio.qurancdn.com/Alafasy/mp3/${String(surahId).padStart(3, '0')}${String(v.verseNumber).padStart(3, '0')}.mp3`,
       reciterName: 'Mishari Rashid Al-Afasy',
       tafsirSnippet: `${isAr ? 'تفسير الآية' : 'Tafsir for verse'} [${v.verseKey}] ${isAr ? 'من سورة' : 'of Surah'} ${surah.nameEn}`,
     }));

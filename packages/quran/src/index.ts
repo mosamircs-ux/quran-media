@@ -1,5 +1,3 @@
-import 'server-only';
-
 export * from './types/index.js';
 export * from './validation/canonical-bounds.js';
 export * from './validation/verse-key.validator.js';

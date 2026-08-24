@@ -50,7 +50,7 @@ export class QuranVerseService {
       TTL_SECONDS,
       async () => {
         const client = getQuranServerClient();
-        const response = await client.content.v4.verses.filter({
+        const response = await (client as any).content?.v4?.verses?.filter?.({
           chapterNumber: surahId,
           language: locale,
           translations: translationIds,
@@ -67,60 +67,36 @@ export class QuranVerseService {
             'manzil_number',
             'sajdah_number',
           ],
-        });
+        }) || { verses: [] };
 
-        const raw = response as unknown as { verses?: Verse[] } | Verse[];
-        const rawVerses = (Array.isArray(raw) ? raw : raw.verses || []) as Array<Verse & {
-          text_uthmani?: string;
-          text_imlaei?: string;
-          verse_number?: number;
-          verse_key?: string;
-          hizb_number?: number;
-          rub_el_hizb_number?: number;
-          ruku_number?: number;
-          manzil_number?: number;
-          sajdah_number?: number | null;
-          words?: Array<{
-            id: number;
-            position: number;
-            audio_url?: string;
-            char_type_name: string;
-            text_uthmani: string;
-            text_indopak?: string;
-            text_imlaei?: string;
-            page_number: number;
-            line_number: number;
-            translation?: { text: string; language_name: string };
-            transliteration?: { text: string; language_name: string };
-          }>;
-          translations?: Array<{ id: number; resource_id: number; text: string }>;
-        }>;
+        const raw = response as unknown as { verses?: any[] } | any[];
+        const rawVerses = (Array.isArray(raw) ? raw : (raw as any).verses || []) as any[];
 
-        const verses: Verse[] = rawVerses.map((v) => {
+        const verses: Verse[] = rawVerses.map((v: any) => {
           const verseNumber = v.verseNumber ?? v.verse_number ?? 1;
           const verseKey = v.verseKey ?? v.verse_key ?? `${surahId}:${verseNumber}`;
 
-          const mappedWords: VerseWord[] | undefined = v.words?.map((w) => ({
+          const mappedWords: VerseWord[] | undefined = v.words?.map((w: any) => ({
             id: w.id,
             position: w.position,
-            audioUrl: w.audio_url,
-            charTypeName: w.char_type_name,
-            textUthmani: w.text_uthmani,
-            textIndopak: w.text_indopak,
-            textImlaei: w.text_imlaei,
-            pageNumber: w.page_number,
-            lineNumber: w.line_number,
+            audioUrl: w.audioUrl ?? w.audio_url,
+            charTypeName: w.charTypeName ?? w.char_type_name,
+            textUthmani: w.textUthmani ?? w.text_uthmani,
+            textIndopak: w.textIndopak ?? w.text_indopak,
+            textImlaei: w.textImlaei ?? w.text_imlaei,
+            pageNumber: w.pageNumber ?? w.page_number,
+            lineNumber: w.lineNumber ?? w.line_number,
             translation: w.translation
-              ? { text: w.translation.text, languageName: w.translation.language_name }
+              ? { text: w.translation.text, languageName: w.translation.languageName ?? w.translation.language_name }
               : undefined,
             transliteration: w.transliteration
-              ? { text: w.transliteration.text, languageName: w.transliteration.language_name }
+              ? { text: w.transliteration.text, languageName: w.transliteration.languageName ?? w.transliteration.language_name }
               : undefined,
           }));
 
-          const mappedTranslations = v.translations?.map((t) => ({
+          const mappedTranslations = v.translations?.map((t: any) => ({
             id: t.id,
-            resourceId: t.resource_id ?? t.id,
+            resourceId: t.resourceId ?? t.resource_id ?? t.id,
             text: t.text,
           }));
 

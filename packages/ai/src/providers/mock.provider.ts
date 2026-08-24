@@ -39,7 +39,7 @@ export class MockAIProvider extends BaseAIProvider {
     };
   }
 
-  async *streamText(prompt: string): AsyncIterable<string> {
+  async *streamText(_prompt: string): AsyncIterable<string> {
     const tokens = ['In ', 'the ', 'name ', 'of ', 'Allah, ', 'the ', 'Most ', 'Gracious, ', 'the ', 'Most ', 'Merciful.'];
     for (const t of tokens) {
       await new Promise((r) => setTimeout(r, 20));
@@ -241,7 +241,7 @@ export class MockAIProvider extends BaseAIProvider {
     };
   }
 
-  async generateImage(prompt: string, options: ImageGenerationOptions): Promise<ImageResult> {
+  async generateImage(_prompt: string, options: ImageGenerationOptions): Promise<ImageResult> {
     const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="1080" height="1920" viewBox="0 0 1080 1920">
       <defs>
         <radialGradient id="g" cx="50%" cy="40%" r="60%">
@@ -263,7 +263,7 @@ export class MockAIProvider extends BaseAIProvider {
     };
   }
 
-  async generateVideo(prompt: string, options: VideoGenerationOptions): Promise<VideoResult> {
+  async generateVideo(_prompt: string, options: VideoGenerationOptions): Promise<VideoResult> {
     return {
       url: 'https://cdn.example.com/mock-video.mp4',
       provider: this.id,

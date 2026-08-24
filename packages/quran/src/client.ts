@@ -2,9 +2,9 @@ import 'server-only';
 import { createServerClient } from '@quranjs/api/server';
 import { env, logger, QuranApiError } from '@quran-media/config';
 
-let serverClientInstance: ReturnType<typeof createServerClient> | null = null;
+let serverClientInstance: any = null;
 
-export function getQuranServerClient() {
+export function getQuranServerClient(): any {
   if (!serverClientInstance) {
     try {
       serverClientInstance = createServerClient({

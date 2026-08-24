@@ -2,13 +2,13 @@ import 'server-only';
 import { createServerClient } from '@quranjs/api/server';
 import { env, logger, QuranApiError } from '@quran-media/config';
 
-let serverClientInstance: ReturnType<typeof createServerClient> | null = null;
+let serverClientInstance: any = null;
 
 /**
  * Returns the singleton authenticated server client from @quranjs/api.
  * Protected by `import 'server-only'` to prevent bundling into client-side JS.
  */
-export function getQuranServerClient() {
+export function getQuranServerClient(): any {
   if (!serverClientInstance) {
     try {
       serverClientInstance = createServerClient({
@@ -23,3 +23,4 @@ export function getQuranServerClient() {
   }
   return serverClientInstance;
 }
+

@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from 'next/server';
-import { getRecitationAudio } from '@quran-media/quran';
+import { quranRecitationService } from '@quran-media/quran';
 import { logger } from '@quran-media/config';
 
 export async function GET(request: NextRequest) {
@@ -18,7 +18,7 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const audio = await getRecitationAudio(surah, reciterId);
+    const audio = await quranRecitationService.getChapterRecitationAudio(surah, reciterId);
 
     return NextResponse.json(
       {

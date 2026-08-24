@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from 'next/server';
-import { searchQuran } from '@quran-media/quran';
+import { quranSearchService } from '@quran-media/quran';
 import { logger } from '@quran-media/config';
 
 export async function GET(request: NextRequest) {
@@ -20,7 +20,7 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const results = await searchQuran({ query: q, locale, page, size });
+    const results = await quranSearchService.search({ query: q, locale, page, size });
 
     return NextResponse.json({
       success: true,

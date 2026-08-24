@@ -105,7 +105,7 @@ export async function POST(request: NextRequest) {
               : aspectRatio === '1:1'
                 ? 'RATIO_1_1'
                 : 'RATIO_4_5',
-        config: parsed.data as unknown as Record<string, unknown>,
+        config: JSON.parse(JSON.stringify(parsed.data)),
       },
     });
 

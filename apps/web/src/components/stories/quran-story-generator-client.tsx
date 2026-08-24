@@ -3,12 +3,11 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import type { Locale } from '@quran-media/i18n';
-import { CANONICAL_SURAHS, type CanonicalSurahMeta } from '@quran-media/quran';
+import { CANONICAL_SURAHS } from '@quran-media/quran';
 import {
   Sparkles,
   BookOpen,
   Film,
-  Lightbulb,
   GraduationCap,
   Clock,
   Smile,
@@ -16,7 +15,6 @@ import {
   Copy,
   Check,
   Download,
-  ExternalLink,
   ShieldCheck,
   Eye,
   RefreshCw,
@@ -26,8 +24,6 @@ import {
   ChevronDown,
   ChevronUp,
   Layers,
-  ArrowRight,
-  Info,
   CheckCircle2,
   Video,
   Feather,

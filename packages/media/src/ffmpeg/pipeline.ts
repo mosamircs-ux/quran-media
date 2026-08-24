@@ -47,7 +47,7 @@ export async function synthesizeQuranVideo(options: VideoSynthesisOptions): Prom
         logger.info({ outputPath }, 'FFmpeg video synthesis finished successfully');
         resolve();
       })
-      .on('error', (err, stdout, stderr) => {
+      .on('error', (err, _stdout, stderr) => {
         logger.error({ err: err.message, stderr }, 'FFmpeg video synthesis failed');
         reject(new MediaProcessingError(`Video encoding failed: ${err.message}`, { stderr }));
       })

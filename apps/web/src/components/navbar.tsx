@@ -18,6 +18,7 @@ import {
   Bookmark,
   Layers,
   Info,
+  Feather,
 } from 'lucide-react';
 
 interface NavbarProps {
