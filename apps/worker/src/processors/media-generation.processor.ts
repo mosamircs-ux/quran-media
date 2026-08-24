@@ -1,15 +1,14 @@
 import type { Job } from 'bullmq';
 import type { VideoGenerationJobData } from '../queues/definitions.js';
 import { db } from '@quran-media/database';
-import { getVersesBySurah, getRecitationAudio, getChapterById } from '@quran-media/quran';
+import { quranVerseService, quranRecitationService, quranChapterService } from '@quran-media/quran';
 import { aiRegistry, buildReverentVisualPrompt } from '@quran-media/ai';
 import {
-  synthesizeQuranVideo,
-  generateAssSubtitles,
-  composeQuranImage,
+  mediaCompositionService,
   uploadFileToS3,
-  getDimensionsForAspectRatio,
-  type SubtitleCue,
+  MediaProjectSchema,
+  type MediaProject,
+  type AspectRatio,
 } from '@quran-media/media';
 import { env, logger } from '@quran-media/config';
 import fs from 'fs';
@@ -21,158 +20,256 @@ export async function processVideoGeneration(job: Job<VideoGenerationJobData>): 
     projectId,
     userId,
     surahNumber,
-    ayahStart,
-    ayahEnd,
-    aspectRatio,
+    ayahStart = 1,
+    ayahEnd = 1,
+    aspectRatio = '9:16',
     reciterId = 7,
     stylePreset = 'cinematic_nature',
     customPrompt,
     aiProvider,
     locale = 'ar',
+    project: customProject,
   } = job.data;
 
   const tempDir = path.resolve(env.MEDIA_TEMP_DIR, generationId);
   fs.mkdirSync(tempDir, { recursive: true });
 
   try {
-    logger.info({ generationId, surahNumber, ayahStart, ayahEnd }, 'Processing video generation job');
+    logger.info({ generationId, surahNumber, ayahStart, ayahEnd }, 'Starting video generation job');
 
-    // 1. Update Database Status -> PROCESSING (10%)
+    // 1. Initial State: PROCESSING (5%)
     await db.generation.update({
       where: { id: generationId },
       data: {
         status: 'PROCESSING',
-        progress: 10,
-        currentStep: 'FETCHING_QURAN_DATA',
+        progress: 5,
+        currentStep: 'INITIALIZING',
         startedAt: new Date(),
       },
     });
-    await job.updateProgress(10);
+    await job.updateProgress(5);
 
-    // 2. Fetch Verses & Chapter Metadata
-    const chapter = await getChapterById(surahNumber, locale);
-    const verses = await getVersesBySurah({
-      surah: surahNumber,
-      fromAyah: ayahStart,
-      toAyah: ayahEnd,
-      locale,
-    });
-    const audioData = await getRecitationAudio(surahNumber, reciterId);
+    let projectToRender: MediaProject;
 
-    // 3. Generate AI Visual Background (progress: 30%)
-    await db.generation.update({
-      where: { id: generationId },
-      data: { progress: 30, currentStep: 'GENERATING_VISUALS' },
-    });
-    await job.updateProgress(30);
+    if (customProject) {
+      projectToRender = customProject;
+    } else {
+      // 2. Fetch Quranic Passages & Recitation Audio
+      const targetSurah = surahNumber || 1;
+      const chapter = await quranChapterService.getChapterById(targetSurah, locale);
+      const verses = await quranVerseService.getVersesByChapter({
+        surahId: targetSurah,
+        fromVerse: ayahStart,
+        toVerse: ayahEnd,
+        locale,
+        translationIds: [131],
+      });
+      const audioFile = await quranRecitationService.getChapterRecitationAudio(targetSurah, reciterId);
 
-    const imageProvider = aiRegistry.getPreferredProvider('image', aiProvider);
-    const visualPrompt = buildReverentVisualPrompt({
-      surahName: chapter.nameSimple,
-      themeDescription: customPrompt || `Majestic reflection on divine verses of Surah ${chapter.nameSimple}`,
-      stylePreset,
-    });
-
-    let backgroundBuffer: Buffer;
-    if (imageProvider.generateImage) {
-      const imgRes = await imageProvider.generateImage(visualPrompt, {
-        aspectRatio,
-        style: stylePreset,
+      // AI visual image background URL or prompt
+      const imageProvider = aiRegistry.getPreferredProvider('image', aiProvider);
+      const visualPrompt = buildReverentVisualPrompt({
+        surahName: chapter.nameSimple || chapter.nameArabic,
+        themeDescription: customPrompt || `Majestic reflection on divine verses of Surah ${chapter.nameSimple}`,
+        stylePreset,
       });
 
-      if (imgRes.url.startsWith('data:')) {
-        const base64Data = imgRes.url.split(',')[1] || '';
-        backgroundBuffer = Buffer.from(base64Data, 'base64');
-      } else {
-        // Fetch image url
-        const res = await fetch(imgRes.url);
-        backgroundBuffer = Buffer.from(await res.arrayBuffer());
+      let bgImageUrl: string | undefined;
+      try {
+        if (imageProvider.generateImage) {
+          const imgRes = await imageProvider.generateImage(visualPrompt, {
+            aspectRatio,
+            style: stylePreset,
+          });
+          bgImageUrl = imgRes.url;
+        }
+      } catch (imgErr) {
+        logger.warn({ imgErr }, 'AI background image generation warning; falling back to procedural gradient');
       }
-    } else {
-      const dims = getDimensionsForAspectRatio(aspectRatio);
-      backgroundBuffer = await composeQuranImage({
-        width: dims.width,
-        height: dims.height,
-        aspectRatio,
-        surahTitle: `سورة ${chapter.nameArabic}`,
+
+      // Build scenes array
+      const scenes = verses.map((v, i) => ({
+        id: `scene-${v.verseKey}`,
+        duration: Math.max(4, Math.round(25 / verses.length)),
+        background: {
+          type: bgImageUrl ? ('image' as const) : ('animated_gradient' as const),
+          src: bgImageUrl,
+          color: '#020617',
+          gradientColors: ['#064e3b', '#0f172a', '#020617'],
+        },
+        camera: {
+          effect: (i % 2 === 0 ? 'zoom_in' : 'pan_left') as 'zoom_in' | 'pan_left',
+          intensity: 0.12,
+          startScale: 1.0,
+          endScale: 1.12,
+        },
+        transition: {
+          type: 'crossfade' as const,
+          duration: 1.0,
+        },
+        verse: {
+          verseKey: v.verseKey,
+          surahNumber: targetSurah,
+          ayahNumber: v.verseNumber,
+          textUthmani: v.textUthmani,
+          textSimple: v.textSimple,
+          translationText: v.translations?.[0]?.text,
+        },
+        overlay: {
+          title: `سورة ${chapter.nameArabic}`,
+          themeColor: '#f59e0b',
+        },
+      }));
+
+      // Subtitle cues with word timing if available
+      const cues = verses.map((v, i) => ({
+        index: i + 1,
+        startMs: i * 5000,
+        endMs: (i + 1) * 5000,
+        arabicText: v.textUthmani || v.textSimple,
+        translationText: v.translations?.[0]?.text,
+        verseKey: v.verseKey,
+      }));
+
+      projectToRender = MediaProjectSchema.parse({
+        id: generationId,
+        title: `سورة ${chapter.nameArabic} - الآيات ${ayahStart}:${ayahEnd}`,
+        aspectRatio: aspectRatio as AspectRatio,
+        resolution: '1080p',
+        fps: 30,
+        scenes,
+        audio: {
+          recitation: {
+            src: audioFile.audioUrl,
+            reciterId,
+            volume: 1.0,
+            normalize: true,
+          },
+          ambient: {
+            preset: 'deep_serenity',
+            volume: 0.16,
+            loop: true,
+          },
+          audioWaveform: {
+            enabled: true,
+            style: 'bars',
+            color: '#f59e0b',
+            height: 80,
+            position: 'bottom',
+            opacity: 0.85,
+            scale: 'sqrt',
+          },
+          sidechainDucking: {
+            enabled: true,
+            duckAmountDb: 18,
+          },
+        },
+        subtitles: {
+          enabled: true,
+          cues,
+          style: {
+            fontArabic: 'Amiri Quran, Traditional Arabic, Arial',
+            fontTranslation: 'Inter, Roboto, Arial',
+            primaryColorHex: '&H00FFFFFF',
+            highlightColorHex: '&H0000D7FF',
+            outlineColorHex: '&H00000000',
+            outlineWidth: 3,
+            shadowWidth: 2,
+            alignment: 2,
+            marginV: 140,
+            dualLanguage: true,
+            wordHighlight: true,
+            rtl: true,
+          },
+        },
+        intro: {
+          enabled: true,
+          duration: 3,
+          titleAr: `سورة ${chapter.nameArabic}`,
+          titleEn: `Surah ${chapter.nameSimple}`,
+          badge: 'تلاوة خاشعة مرئية',
+          animation: 'fade',
+        },
+        outro: {
+          enabled: true,
+          duration: 4,
+          reflectionAr: 'سبحان الله وبحمده، سبحان الله العظيم',
+          callToAction: 'اشترك للمزيد من روائع التلاوات والقصص القرآنية',
+          socialHandle: '@QuranMedia',
+          animation: 'fade',
+        },
+        outputFormats: ['mp4', 'webm', 'thumbnail', 'preview'],
       });
     }
 
-    const bgImagePath = path.join(tempDir, 'background.png');
-    fs.writeFileSync(bgImagePath, backgroundBuffer);
-
-    // 4. Download / prepare Audio file (progress: 50%)
-    await db.generation.update({
-      where: { id: generationId },
-      data: { progress: 50, currentStep: 'PREPARING_AUDIO' },
-    });
-    await job.updateProgress(50);
-
-    const audioBuffer = await (await fetch(audioData.audioUrl)).arrayBuffer();
-    const audioFilePath = path.join(tempDir, 'recitation.mp3');
-    fs.writeFileSync(audioFilePath, Buffer.from(audioBuffer));
-
-    // 5. Generate Subtitles (progress: 65%)
-    await db.generation.update({
-      where: { id: generationId },
-      data: { progress: 65, currentStep: 'COMPILING_SUBTITLES' },
-    });
-    await job.updateProgress(65);
-
-    const cues: SubtitleCue[] = verses.map((v, i) => ({
-      index: i + 1,
-      startMs: i * 5000,
-      endMs: (i + 1) * 5000,
-      arabicText: v.textUthmani,
-      translationText: v.translations?.[0]?.text,
-    }));
-
-    const dims = getDimensionsForAspectRatio(aspectRatio);
-    const assContent = generateAssSubtitles(cues, undefined, dims.width, dims.height);
-    const subtitleFilePath = path.join(tempDir, 'subtitles.ass');
-    fs.writeFileSync(subtitleFilePath, assContent, 'utf8');
-
-    // 6. FFmpeg Video Synthesis (progress: 75% -> 90%)
-    await db.generation.update({
-      where: { id: generationId },
-      data: { progress: 75, currentStep: 'SYNTHESIZING_VIDEO' },
-    });
-    await job.updateProgress(75);
-
-    const outputVideoPath = path.join(tempDir, 'output.mp4');
-    await synthesizeQuranVideo({
-      audioPath: audioFilePath,
-      backgroundPath: bgImagePath,
-      subtitlePath: subtitleFilePath,
-      outputPath: outputVideoPath,
-      aspectRatio,
-      onProgress: async (p) => {
-        const scaled = Math.round(75 + (p * 15) / 100);
-        await job.updateProgress(scaled);
+    // 3. Execute Production-Grade MediaCompositionService
+    const renderResult = await mediaCompositionService.compose(projectToRender, {
+      tempDir,
+      onProgress: async (progress) => {
+        await db.generation.update({
+          where: { id: generationId },
+          data: {
+            progress: progress.percent,
+            currentStep: progress.currentStepDescription,
+          },
+        });
+        await job.updateProgress(progress.percent);
       },
     });
 
-    // 7. Upload to S3 (progress: 95%)
+    // 4. Upload Deliverables to S3 (progress: 90% - 98%)
     await db.generation.update({
       where: { id: generationId },
-      data: { progress: 95, currentStep: 'UPLOADING_STORAGE' },
+      data: { progress: 90, currentStep: 'UPLOADING_DELIVERABLES' },
     });
-    await job.updateProgress(95);
+    await job.updateProgress(90);
 
-    const s3Key = `media/videos/${userId}/${generationId}.mp4`;
-    const stats = fs.statSync(outputVideoPath);
-    const uploadResult = await uploadFileToS3({
-      key: s3Key,
-      filePath: outputVideoPath,
-      contentType: 'video/mp4',
-      metadata: {
-        surah: String(surahNumber),
-        ayahs: `${ayahStart}-${ayahEnd}`,
-        aspectRatio,
-      },
-    });
+    let storageUrlMp4 = '';
+    let storageUrlWebm = '';
+    let storageUrlThumb = '';
+    let storageUrlPrev = '';
 
-    // 8. Create MediaAsset in Database & Mark Generation COMPLETED (100%)
+    if (renderResult.mp4Path && fs.existsSync(renderResult.mp4Path)) {
+      const s3KeyMp4 = `media/videos/${userId}/${generationId}.mp4`;
+      const up = await uploadFileToS3({
+        key: s3KeyMp4,
+        filePath: renderResult.mp4Path,
+        contentType: 'video/mp4',
+      });
+      storageUrlMp4 = up.location;
+    }
+
+    if (renderResult.webmPath && fs.existsSync(renderResult.webmPath)) {
+      const s3KeyWebm = `media/videos/${userId}/${generationId}.webm`;
+      const up = await uploadFileToS3({
+        key: s3KeyWebm,
+        filePath: renderResult.webmPath,
+        contentType: 'video/webm',
+      });
+      storageUrlWebm = up.location;
+    }
+
+    if (renderResult.thumbnailPath && fs.existsSync(renderResult.thumbnailPath)) {
+      const s3KeyThumb = `media/thumbnails/${userId}/${generationId}.jpg`;
+      const up = await uploadFileToS3({
+        key: s3KeyThumb,
+        filePath: renderResult.thumbnailPath,
+        contentType: 'image/jpeg',
+      });
+      storageUrlThumb = up.location;
+    }
+
+    if (renderResult.previewPath && fs.existsSync(renderResult.previewPath)) {
+      const s3KeyPrev = `media/previews/${userId}/${generationId}.mp4`;
+      const up = await uploadFileToS3({
+        key: s3KeyPrev,
+        filePath: renderResult.previewPath,
+        contentType: 'video/mp4',
+      });
+      storageUrlPrev = up.location;
+    }
+
+    // 5. Store MediaAsset Record in DB
     const mediaAsset = await db.mediaAsset.create({
       data: {
         userId,
@@ -188,14 +285,25 @@ export async function processVideoGeneration(job: Job<VideoGenerationJobData>): 
                 ? 'RATIO_1_1'
                 : 'RATIO_4_5',
         mimeType: 'video/mp4',
-        fileSize: BigInt(stats.size),
-        width: dims.width,
-        height: dims.height,
-        storageKey: uploadResult.key,
-        storageUrl: uploadResult.location,
+        fileSize: BigInt(renderResult.fileSizeMp4Bytes || 0),
+        width: renderResult.width,
+        height: renderResult.height,
+        duration: renderResult.durationSeconds,
+        storageKey: `media/videos/${userId}/${generationId}.mp4`,
+        storageUrl: storageUrlMp4,
+        thumbnailKey: `media/thumbnails/${userId}/${generationId}.jpg`,
+        thumbnailUrl: storageUrlThumb,
+        metadata: {
+          webmUrl: storageUrlWebm,
+          previewUrl: storageUrlPrev,
+          aspectRatio: renderResult.aspectRatio,
+          resolution: renderResult.resolution,
+          fps: renderResult.fps,
+        },
       },
     });
 
+    // 6. Mark Generation COMPLETED (100%)
     await db.generation.update({
       where: { id: generationId },
       data: {
@@ -205,8 +313,12 @@ export async function processVideoGeneration(job: Job<VideoGenerationJobData>): 
         completedAt: new Date(),
         result: {
           assetId: mediaAsset.id,
-          storageUrl: uploadResult.location,
-          aspectRatio,
+          storageUrl: storageUrlMp4,
+          webmUrl: storageUrlWebm,
+          thumbnailUrl: storageUrlThumb,
+          previewUrl: storageUrlPrev,
+          duration: renderResult.durationSeconds,
+          aspectRatio: renderResult.aspectRatio,
         },
       },
     });
@@ -228,13 +340,11 @@ export async function processVideoGeneration(job: Job<VideoGenerationJobData>): 
 
     throw err;
   } finally {
-    // Cleanup temporary files
+    // Clean up temporary workspace
     try {
       if (fs.existsSync(tempDir)) {
         fs.rmSync(tempDir, { recursive: true, force: true });
       }
-    } catch (cleanupErr) {
-      logger.warn({ cleanupErr, tempDir }, 'Failed to clean up temporary generation folder');
-    }
+    } catch {}
   }
 }

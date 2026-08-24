@@ -16,8 +16,8 @@ export function generateAssSubtitles(
   playResX: number = 1080,
   playResY: number = 1920
 ): string {
-  const font = style?.fontName || 'Amiri';
-  const size = style?.fontSize || 36;
+  const font = (style as any)?.fontName || style?.fontArabic || 'Amiri';
+  const size = (style as any)?.fontSize || style?.fontSizeArabic || 36;
   const primaryColor = style?.primaryColorHex || '&H00FFFFFF';
   const highlightColor = style?.highlightColorHex || '&H0000D7FF'; // Gold
   const outlineColor = style?.outlineColorHex || '&H00000000';

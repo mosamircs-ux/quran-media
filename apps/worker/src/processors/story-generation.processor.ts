@@ -1,7 +1,7 @@
 import type { Job } from 'bullmq';
 import type { StoryGenerationJobData } from '../queues/definitions.js';
 import { db } from '@quran-media/database';
-import { getChapterById, getVersesBySurah } from '@quran-media/quran';
+import { quranChapterService, quranVerseService } from '@quran-media/quran';
 import { aiRegistry } from '@quran-media/ai';
 import { logger } from '@quran-media/config';
 
@@ -14,10 +14,15 @@ export async function processStoryGeneration(job: Job<StoryGenerationJobData>): 
       data: { status: 'PROCESSING', progress: 30, startedAt: new Date() },
     });
 
-    const chapter = await getChapterById(surahNumber, locale);
-    const verses = await getVersesBySurah({ surah: surahNumber, fromAyah: ayahStart, toAyah: ayahEnd, locale });
+    const chapter = await quranChapterService.getChapterById(surahNumber, locale);
+    const verses = await quranVerseService.getVersesByChapter({
+      surahId: surahNumber,
+      fromVerse: ayahStart,
+      toVerse: ayahEnd,
+      locale,
+    });
 
-    const arabicText = verses.map((v) => v.textUthmani).join(' ');
+    const arabicText = verses.map((v) => v.textUthmani || v.textSimple).join(' ');
     const translationText = verses.map((v) => v.translations?.[0]?.text || '').join(' ');
 
     const storyProvider = aiRegistry.getPreferredProvider('story', aiProvider);
@@ -42,7 +47,7 @@ export async function processStoryGeneration(job: Job<StoryGenerationJobData>): 
         status: 'COMPLETED',
         progress: 100,
         completedAt: new Date(),
-        result: story as unknown as Record<string, unknown>,
+        result: JSON.parse(JSON.stringify(story)),
       },
     });
 

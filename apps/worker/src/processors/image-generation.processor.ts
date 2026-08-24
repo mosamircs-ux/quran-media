@@ -1,7 +1,7 @@
 import type { Job } from 'bullmq';
 import type { ImageGenerationJobData } from '../queues/definitions.js';
 import { db } from '@quran-media/database';
-import { getChapterById, getVersesBySurah } from '@quran-media/quran';
+import { quranChapterService, quranVerseService } from '@quran-media/quran';
 import { aiRegistry, buildReverentVisualPrompt } from '@quran-media/ai';
 import {
   composeQuranImage,
@@ -30,9 +30,14 @@ export async function processImageGeneration(job: Job<ImageGenerationJobData>): 
       data: { status: 'PROCESSING', progress: 20, startedAt: new Date() },
     });
 
-    const chapter = await getChapterById(surahNumber, 'ar');
-    const verses = await getVersesBySurah({ surah: surahNumber, fromAyah: ayahStart, toAyah: ayahEnd });
-    const fullArabicText = verses.map((v) => v.textUthmani).join(' ');
+    const chapter = await quranChapterService.getChapterById(surahNumber, 'ar');
+    const verses = await quranVerseService.getVersesByChapter({
+      surahId: surahNumber,
+      fromVerse: ayahStart,
+      toVerse: ayahEnd,
+      locale: 'ar',
+    });
+    const fullArabicText = verses.map((v) => v.textUthmani || v.textSimple).join(' ');
 
     const imageProvider = aiRegistry.getPreferredProvider('image', aiProvider);
     const visualPrompt = buildReverentVisualPrompt({

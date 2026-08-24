@@ -224,6 +224,9 @@ importers:
       sharp:
         specifier: ^0.33.5
         version: 0.33.5
+      zod:
+        specifier: ^3.24.2
+        version: 3.25.76
     devDependencies:
       '@types/fluent-ffmpeg':
         specifier: ^2.1.27

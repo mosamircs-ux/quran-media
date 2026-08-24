@@ -8,15 +8,16 @@ import { env, QUEUE_NAMES, logger } from '@quran-media/config';
 const createGenerationSchema = z.object({
   projectId: z.string().optional(),
   type: z.enum(['VIDEO', 'IMAGE', 'STORY', 'TEXT']).default('VIDEO'),
-  surahNumber: z.number().int().min(1).max(114),
-  ayahStart: z.number().int().min(1),
-  ayahEnd: z.number().int().min(1),
+  surahNumber: z.number().int().min(1).max(114).optional().default(1),
+  ayahStart: z.number().int().min(1).optional().default(1),
+  ayahEnd: z.number().int().min(1).optional().default(1),
   aspectRatio: z.enum(['9:16', '16:9', '1:1', '4:5']).default('9:16'),
   reciterId: z.number().int().default(7),
   stylePreset: z.string().default('cinematic_nature'),
   customPrompt: z.string().optional(),
   aiProvider: z.string().optional(),
   locale: z.enum(['ar', 'en']).default('ar'),
+  project: z.record(z.unknown()).optional(),
 });
 
 let queueConnection: Redis | null = null;

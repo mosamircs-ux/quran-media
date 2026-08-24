@@ -1,4 +1,5 @@
 export * from './types.js';
+export * from './types/project.types.js';
 export * from './aspect-ratios.js';
 export * from './storage/s3.js';
 export * from './composer/subtitles.js';
@@ -7,3 +8,11 @@ export * from './composer/audio.js';
 export * from './ffmpeg/client.js';
 export * from './ffmpeg/filters.js';
 export * from './ffmpeg/pipeline.js';
+
+// Production-Grade Rendering Engine Services
+export * from './services/image-renderer.service.js';
+export * from './services/audio-renderer.service.js';
+export * from './services/subtitle-renderer.service.js';
+export * from './services/video-renderer.service.js';
+export * from './services/thumbnail-generator.service.js';
+export * from './services/media-composition.service.js';
