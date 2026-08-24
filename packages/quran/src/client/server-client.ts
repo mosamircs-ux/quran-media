@@ -1,4 +1,3 @@
-import 'server-only';
 import { createServerClient } from '@quranjs/api/server';
 import { env, logger, QuranApiError } from '@quran-media/config';
 

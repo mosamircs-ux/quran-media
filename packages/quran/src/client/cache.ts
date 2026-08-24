@@ -1,4 +1,3 @@
-import 'server-only';
 import { logger } from '@quran-media/config';
 
 interface CacheEntry<T> {

@@ -1,10 +1,9 @@
-import 'server-only';
 import { getQuranServerClient } from '../client/server-client.js';
 import { getOrSetCache } from '../client/cache.js';
 import { FALLBACK_RECITERS } from '../client/fallback-data.js';
 import { isValidSurahId, TOTAL_SURAHS } from '../validation/canonical-bounds.js';
 import type { Reciter, AudioRecitationFile } from '../types/recitation.types.js';
-import { ValidationError, QuranApiError } from '@quran-media/config';
+import { ValidationError } from '@quran-media/config';
 
 export class QuranRecitationService {
   /**

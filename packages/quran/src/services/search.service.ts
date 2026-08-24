@@ -1,8 +1,7 @@
-import 'server-only';
 import { getQuranServerClient } from '../client/server-client.js';
 import { getOrSetCache } from '../client/cache.js';
 import type { SearchResult } from '../types/search.types.js';
-import { ValidationError, QuranApiError } from '@quran-media/config';
+import { ValidationError } from '@quran-media/config';
 
 export interface SearchOptions {
   query: string;

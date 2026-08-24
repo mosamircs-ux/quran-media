@@ -1,4 +1,3 @@
-import 'server-only';
 import { getQuranServerClient } from '../client/server-client.js';
 import { getOrSetCache } from '../client/cache.js';
 import { FALLBACK_TRANSLATIONS } from '../client/fallback-data.js';
