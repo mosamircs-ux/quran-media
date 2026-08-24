@@ -20,7 +20,7 @@
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.39.0",
-    "@google/genai": "^0.1.2",
+    "@google/genai": "^0.2.0",
     "@quran-media/config": "workspace:*",
     "openai": "^4.85.4",
     "replicate": "^1.0.1"

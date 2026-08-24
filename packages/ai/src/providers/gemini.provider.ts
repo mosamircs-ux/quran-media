@@ -6,9 +6,12 @@ import type {
   TextResult,
   QuranStoryContext,
   QuranStoryResult,
+  QuranStoryGenerateParams,
+  QuranStoryVisualScript,
   ImageGenerationOptions,
   ImageResult,
 } from '../types.js';
+import { buildQuranStoryGeneratorPrompt } from '../prompt-templates/quran-story-generator.js';
 import { env, logger, AiProviderError } from '@quran-media/config';
 
 export class GeminiProvider extends BaseAIProvider {
@@ -121,6 +124,39 @@ Return JSON:
     }
   }
 
+  async generateStructuredQuranStory(params: QuranStoryGenerateParams): Promise<QuranStoryVisualScript> {
+    this.ensureCapability('story');
+    const { systemPrompt, userPrompt } = buildQuranStoryGeneratorPrompt(params);
+
+    const model = params.model || 'gemini-2.5-flash';
+    const result = await this.generateText(userPrompt, {
+      systemPrompt,
+      temperature: 0.4,
+      model,
+      maxTokens: 2500,
+    });
+
+    try {
+      const cleanJson = result.text.replace(/```json\n?|\n?```/g, '').trim();
+      const parsed = JSON.parse(cleanJson);
+      return {
+        title: parsed.title || `${params.surahNameEn} Reflection`,
+        hook: parsed.hook || '',
+        theme: parsed.theme || 'Divine Guidance',
+        emotionalTone: parsed.emotionalTone || 'Reverence',
+        scenes: Array.isArray(parsed.scenes) ? parsed.scenes : [],
+        ending: parsed.ending || '',
+        verseReference: parsed.verseReference || `${params.surahNumber}:${params.ayahStart}`,
+        mode: params.mode,
+        provider: this.id,
+        model,
+      };
+    } catch (err) {
+      logger.warn({ err, rawText: result.text }, 'Failed to parse Gemini structured story JSON; attempting fallback recovery');
+      throw new AiProviderError('Failed to parse structured JSON from Gemini response', err);
+    }
+  }
+
   async generateImage(prompt: string, options: ImageGenerationOptions): Promise<ImageResult> {
     this.ensureCapability('image');
     if (!this.ai) throw new AiProviderError('Gemini client is not configured');
@@ -152,3 +188,4 @@ Return JSON:
     }
   }
 }
+

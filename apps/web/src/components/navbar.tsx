@@ -43,13 +43,13 @@ export function Navbar({ locale }: NavbarProps) {
 
   const navLinks = [
     { href: `/${locale}`, label: isAr ? 'الرئيسية' : 'Home', icon: Compass },
-    { href: `/${locale}/create`, label: isAr ? 'الاستوديو' : 'Studio', icon: Sparkles },
+    { href: `/${locale}/create/story`, label: isAr ? 'صانع القصص' : 'AI Story Studio', icon: Feather },
+    { href: `/${locale}/create`, label: isAr ? 'استوديو الفيديو' : 'Video Studio', icon: Sparkles },
+    { href: `/${locale}/stories`, label: isAr ? 'المكتبة' : 'Stories', icon: Layers },
     { href: `/${locale}/ayahs`, label: isAr ? 'الآيات' : 'Ayahs', icon: Bookmark },
     { href: `/${locale}/surahs`, label: isAr ? 'السور' : 'Surahs', icon: BookOpen },
-    { href: `/${locale}/stories`, label: isAr ? 'القصص' : 'Stories', icon: Layers },
     { href: `/${locale}/videos`, label: isAr ? 'المقاطع' : 'Videos', icon: Film },
     { href: `/${locale}/dashboard`, label: isAr ? 'لوحة التحكم' : 'Dashboard', icon: Compass },
-    { href: `/${locale}#about`, label: isAr ? 'عن المنصة' : 'About', icon: Info },
   ];
 
   const switchLocale = (newLocale: Locale) => {

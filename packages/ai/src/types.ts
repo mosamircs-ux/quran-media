@@ -18,6 +18,80 @@ export interface TextResult {
   };
 }
 
+export type QuranStoryMode =
+  | 'reflection'
+  | 'educational'
+  | 'cinematic'
+  | 'short_reminder'
+  | 'children_friendly'
+  | 'social_media';
+
+export type VisualRepresentationPolicy =
+  | 'symbolic'
+  | 'environmental'
+  | 'celestial'
+  | 'architectural'
+  | 'calligraphic';
+
+export interface StoryScene {
+  sceneNumber: number;
+  duration: string;
+  narration: string;
+  visualDescription: string;
+  cameraMovement: string;
+  transition: string;
+}
+
+export interface QuranStorySourceReferences {
+  surahNumber: number;
+  surahNameAr: string;
+  surahNameEn: string;
+  ayahStart: number;
+  ayahEnd: number;
+  uthmaniText: string;
+  translationAuthor: string;
+  translationText: string;
+  tafsirAuthor: string;
+  tafsirOverview: string;
+  revelationPlace?: string;
+  guardrailsApplied: string[];
+  generatedAt?: string;
+}
+
+export interface QuranStoryVisualScript {
+  title: string;
+  hook: string;
+  theme: string;
+  emotionalTone: string;
+  scenes: StoryScene[];
+  ending: string;
+  verseReference: string;
+  sourceReferences?: QuranStorySourceReferences;
+  mode?: QuranStoryMode;
+  provider?: string;
+  model?: string;
+}
+
+export interface QuranStoryGenerateParams {
+  surahNumber: number;
+  surahNameAr: string;
+  surahNameEn: string;
+  ayahStart: number;
+  ayahEnd: number;
+  arabicText: string;
+  translationText: string;
+  translationAuthor?: string;
+  tafsirText?: string;
+  tafsirAuthor?: string;
+  quranicContext?: string;
+  revelationPlace?: string;
+  mode: QuranStoryMode;
+  visualPolicy?: VisualRepresentationPolicy;
+  locale?: 'ar' | 'en';
+  model?: string;
+  customPromptFocus?: string;
+}
+
 export interface QuranStoryContext {
   surahNameAr: string;
   surahNameEn: string;
@@ -82,6 +156,8 @@ export interface AIProvider {
   generateText?(prompt: string, options?: TextGenerationOptions): Promise<TextResult>;
   streamText?(prompt: string, options?: TextGenerationOptions): AsyncIterable<string>;
   generateQuranStory?(context: QuranStoryContext): Promise<QuranStoryResult>;
+  generateStructuredQuranStory?(params: QuranStoryGenerateParams): Promise<QuranStoryVisualScript>;
   generateImage?(prompt: string, options: ImageGenerationOptions): Promise<ImageResult>;
   generateVideo?(prompt: string, options: VideoGenerationOptions): Promise<VideoResult>;
 }
+

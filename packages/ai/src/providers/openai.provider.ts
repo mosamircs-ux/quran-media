@@ -6,9 +6,12 @@ import type {
   TextResult,
   QuranStoryContext,
   QuranStoryResult,
+  QuranStoryGenerateParams,
+  QuranStoryVisualScript,
   ImageGenerationOptions,
   ImageResult,
 } from '../types.js';
+import { buildQuranStoryGeneratorPrompt } from '../prompt-templates/quran-story-generator.js';
 import { env, logger, AiProviderError } from '@quran-media/config';
 
 export class OpenAIProvider extends BaseAIProvider {
@@ -154,6 +157,44 @@ Return ONLY a valid JSON object matching this schema:
     }
   }
 
+  async generateStructuredQuranStory(params: QuranStoryGenerateParams): Promise<QuranStoryVisualScript> {
+    this.ensureCapability('story');
+    if (!this.client) throw new AiProviderError('OpenAI client is not configured');
+
+    const { systemPrompt, userPrompt } = buildQuranStoryGeneratorPrompt(params);
+    const model = params.model || 'gpt-4o';
+
+    try {
+      const response = await this.client.chat.completions.create({
+        model,
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: userPrompt },
+        ],
+        temperature: 0.4,
+        response_format: { type: 'json_object' },
+      });
+
+      const raw = response.choices[0]?.message?.content || '{}';
+      const parsed = JSON.parse(raw);
+
+      return {
+        title: parsed.title || `${params.surahNameEn} Reflection`,
+        hook: parsed.hook || '',
+        theme: parsed.theme || 'Divine Wisdom',
+        emotionalTone: parsed.emotionalTone || 'Reverence',
+        scenes: Array.isArray(parsed.scenes) ? parsed.scenes : [],
+        ending: parsed.ending || '',
+        verseReference: parsed.verseReference || `${params.surahNumber}:${params.ayahStart}`,
+        mode: params.mode,
+        provider: this.id,
+        model,
+      };
+    } catch (err) {
+      throw new AiProviderError('OpenAI structured story generation failed', err);
+    }
+  }
+
   async generateImage(prompt: string, options: ImageGenerationOptions): Promise<ImageResult> {
     this.ensureCapability('image');
     if (!this.client) throw new AiProviderError('OpenAI client is not configured');
@@ -191,3 +232,4 @@ Return ONLY a valid JSON object matching this schema:
     }
   }
 }
+

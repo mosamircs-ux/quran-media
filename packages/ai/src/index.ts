@@ -7,4 +7,6 @@ export * from './providers/replicate.provider.js';
 export * from './providers/mock.provider.js';
 export * from './registry.js';
 export * from './prompt-templates/quran-stories.js';
+export * from './prompt-templates/quran-story-generator.js';
 export * from './prompt-templates/verse-visuals.js';
+

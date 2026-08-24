@@ -6,7 +6,10 @@ import type {
   TextResult,
   QuranStoryContext,
   QuranStoryResult,
+  QuranStoryGenerateParams,
+  QuranStoryVisualScript,
 } from '../types.js';
+import { buildQuranStoryGeneratorPrompt } from '../prompt-templates/quran-story-generator.js';
 import { env, logger, AiProviderError } from '@quran-media/config';
 
 export class AnthropicProvider extends BaseAIProvider {
@@ -124,4 +127,37 @@ Return strictly valid JSON:
       };
     }
   }
+
+  async generateStructuredQuranStory(params: QuranStoryGenerateParams): Promise<QuranStoryVisualScript> {
+    this.ensureCapability('story');
+    const { systemPrompt, userPrompt } = buildQuranStoryGeneratorPrompt(params);
+
+    const model = params.model || 'claude-3-5-sonnet-20241022';
+    const result = await this.generateText(userPrompt, {
+      systemPrompt,
+      temperature: 0.4,
+      model,
+      maxTokens: 2500,
+    });
+
+    try {
+      const cleanJson = result.text.replace(/```json\n?|\n?```/g, '').trim();
+      const parsed = JSON.parse(cleanJson);
+      return {
+        title: parsed.title || `${params.surahNameEn} Reflection`,
+        hook: parsed.hook || '',
+        theme: parsed.theme || 'Divine Wisdom',
+        emotionalTone: parsed.emotionalTone || 'Reverence',
+        scenes: Array.isArray(parsed.scenes) ? parsed.scenes : [],
+        ending: parsed.ending || '',
+        verseReference: parsed.verseReference || `${params.surahNumber}:${params.ayahStart}`,
+        mode: params.mode,
+        provider: this.id,
+        model,
+      };
+    } catch (err) {
+      throw new AiProviderError('Claude structured story generation failed', err);
+    }
+  }
 }
+
