@@ -10,6 +10,11 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js",
       "default": "./dist/index.js"
+    },
+    "./types": {
+      "types": "./dist/types/project.types.d.ts",
+      "import": "./dist/types/project.types.js",
+      "default": "./dist/types/project.types.js"
     }
   },
   "scripts": {

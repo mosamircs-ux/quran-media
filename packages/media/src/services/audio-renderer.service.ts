@@ -213,24 +213,35 @@ export class AudioRenderer {
   }
 
   /**
-   * Generates a clean silent audio file.
+   * Generates a clean silent audio file directly without external lavfi device dependencies.
    */
   async generateSilentAudio(outputPath: string, durationSeconds: number): Promise<string> {
+    const tempDir = path.dirname(outputPath);
+    fs.mkdirSync(tempDir, { recursive: true });
+
+    const wavBuffer = this.buildWavBuffer(durationSeconds, () => 0);
+    const wavTempPath = `${outputPath}.wav`;
+    fs.writeFileSync(wavTempPath, wavBuffer);
+
     return new Promise((resolve, reject) => {
-      ffmpeg()
-        .input('anullsrc=r=44100:cl=stereo')
-        .inputFormat('lavfi')
-        .duration(durationSeconds)
+      ffmpeg(wavTempPath)
         .audioCodec('libmp3lame')
+        .audioBitrate('192k')
         .output(outputPath)
-        .on('end', () => resolve(outputPath))
-        .on('error', (err) => reject(err))
+        .on('end', () => {
+          try { fs.unlinkSync(wavTempPath); } catch {}
+          resolve(outputPath);
+        })
+        .on('error', (err) => {
+          try { fs.unlinkSync(wavTempPath); } catch {}
+          reject(err);
+        })
         .run();
     });
   }
 
   /**
-   * Creates sample soothing ambient presets (generated via synthetic tones/harmonics).
+   * Creates soothing ambient soundscapes with smooth harmonic resonance and acoustic envelopes.
    */
   async generatePresetAmbient(
     preset: string,
@@ -240,27 +251,87 @@ export class AudioRenderer {
     const tempDir = path.dirname(outputPath);
     fs.mkdirSync(tempDir, { recursive: true });
 
-    let synthTone = 'sine=frequency=108:beep_factor=1.5';
-    if (preset === 'night_desert') synthTone = 'anoisesrc=c=pink:amplitude=0.03';
-    if (preset === 'celestial_reverb') synthTone = 'sine=frequency=216,aecho=0.8:0.88:60:0.4';
-    if (preset === 'rain_gentle') synthTone = 'anoisesrc=c=brown:amplitude=0.04,lowpass=f=1200';
+    const baseFreq = preset === 'night_desert' ? 72 : preset === 'celestial_reverb' ? 144 : 108;
+    const wavBuffer = this.buildWavBuffer(durationSeconds, (t, dur) => {
+      // Gentle harmonic chord
+      const f1 = Math.sin(2 * Math.PI * baseFreq * t);
+      const f2 = Math.sin(2 * Math.PI * (baseFreq * 1.5) * t) * 0.4;
+      const f3 = Math.sin(2 * Math.PI * (baseFreq * 2.0) * t) * 0.2;
+      const signal = (f1 + f2 + f3) * 0.18;
+
+      // Fade in & Fade out envelope
+      let envelope = 1.0;
+      if (t < 1.5) envelope = t / 1.5;
+      else if (t > dur - 1.5) envelope = Math.max(0, (dur - t) / 1.5);
+
+      return signal * envelope;
+    });
+
+    const wavTempPath = `${outputPath}.wav`;
+    fs.writeFileSync(wavTempPath, wavBuffer);
 
     return new Promise((resolve) => {
-      ffmpeg()
-        .input(`eval=init:exprs=${synthTone}`)
-        .inputFormat('lavfi')
-        .audioFilters([
-          `volume=0.2`,
-          `afade=t=in:ss=0:d=1.5`,
-          `afade=t=out:st=${Math.max(0, durationSeconds - 2)}:d=2.0`,
-        ])
-        .duration(durationSeconds)
+      ffmpeg(wavTempPath)
         .audioCodec('libmp3lame')
+        .audioBitrate('192k')
         .output(outputPath)
-        .on('end', () => resolve(outputPath))
-        .on('error', () => this.generateSilentAudio(outputPath, durationSeconds).then(resolve))
+        .on('end', () => {
+          try { fs.unlinkSync(wavTempPath); } catch {}
+          resolve(outputPath);
+        })
+        .on('error', () => {
+          try { fs.unlinkSync(wavTempPath); } catch {}
+          this.generateSilentAudio(outputPath, durationSeconds).then(resolve);
+        })
         .run();
     });
+  }
+
+  private buildWavBuffer(
+    durationSeconds: number,
+    sampleGenerator: (timeSec: number, durationSec: number) => number
+  ): Buffer {
+    const sampleRate = 44100;
+    const numChannels = 2;
+    const bytesPerSample = 2;
+    const totalSamples = Math.floor(durationSeconds * sampleRate);
+    const dataSize = totalSamples * numChannels * bytesPerSample;
+    const buffer = Buffer.alloc(44 + dataSize);
+
+    // RIFF header
+    buffer.write('RIFF', 0);
+    buffer.writeUInt32LE(36 + dataSize, 4);
+    buffer.write('WAVE', 8);
+
+    // fmt sub-chunk
+    buffer.write('fmt ', 12);
+    buffer.writeUInt32LE(16, 16); // Subchunk1Size
+    buffer.writeUInt16LE(1, 20); // AudioFormat PCM
+    buffer.writeUInt16LE(numChannels, 22);
+    buffer.writeUInt32LE(sampleRate, 24);
+    buffer.writeUInt32LE(sampleRate * numChannels * bytesPerSample, 28); // ByteRate
+    buffer.writeUInt16LE(numChannels * bytesPerSample, 32); // BlockAlign
+    buffer.writeUInt16LE(16, 34); // BitsPerSample
+
+    // data sub-chunk
+    buffer.write('data', 36);
+    buffer.writeUInt32LE(dataSize, 40);
+
+    let offset = 44;
+    for (let i = 0; i < totalSamples; i++) {
+      const t = i / sampleRate;
+      const sampleVal = Math.max(-1, Math.min(1, sampleGenerator(t, durationSeconds)));
+      const int16Val = Math.floor(sampleVal * 32767);
+
+      // Left channel
+      buffer.writeInt16LE(int16Val, offset);
+      offset += 2;
+      // Right channel
+      buffer.writeInt16LE(int16Val, offset);
+      offset += 2;
+    }
+
+    return buffer;
   }
 }
 
