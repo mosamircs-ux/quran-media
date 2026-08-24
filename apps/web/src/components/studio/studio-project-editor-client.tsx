@@ -26,6 +26,12 @@ import { SceneInspector } from './scene-inspector';
 import { AudioInspector } from './audio-inspector';
 import { SubtitlesInspector } from './subtitles-inspector';
 import { ShareModal } from './share-modal';
+import { TemplatePickerModal } from '@/components/templates/template-picker-modal';
+import {
+  applyTemplateToProject,
+  QURAN_MEDIA_TEMPLATES,
+  type QuranMediaTemplate,
+} from '@quran-media/media/templates';
 import {
   MediaProjectSchema,
   MediaSceneSchema,
@@ -113,7 +119,27 @@ export function StudioProjectEditorClient({
     initialProject?.status === 'PROCESSING' || initialProject?.status === 'QUEUED'
   );
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+  const [isTemplatePickerOpen, setIsTemplatePickerOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+
+  const handleApplyTemplate = (template: QuranMediaTemplate) => {
+    const updated = applyTemplateToProject(
+      {
+        id: projectId,
+        title: projectTitle,
+        aspectRatio,
+        scenes,
+        audio: audioConfig,
+        subtitles: subtitlesConfig,
+      },
+      template.template_id
+    );
+
+    setAspectRatio(updated.aspectRatio);
+    setScenes(updated.scenes);
+    if (updated.audio) setAudioConfig(updated.audio);
+    if (updated.subtitles) setSubtitlesConfig(updated.subtitles);
+  };
 
   const totalDuration = scenes.reduce((acc, s) => acc + s.duration, 0);
 
@@ -339,6 +365,15 @@ export function StudioProjectEditorClient({
             ))}
           </div>
 
+          {/* Template Switcher Button */}
+          <button
+            onClick={() => setIsTemplatePickerOpen(true)}
+            className="py-2 px-3.5 rounded-2xl bg-slate-900 border border-slate-800 hover:border-amber-500/60 text-slate-200 text-xs font-semibold flex items-center gap-1.5 transition-colors shadow"
+          >
+            <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+            <span>{isAr ? 'تغيير القالب' : 'Change Template'}</span>
+          </button>
+
           {/* Save Button */}
           <button
             onClick={handleSaveProject}
@@ -482,6 +517,15 @@ export function StudioProjectEditorClient({
         videoUrl={videoUrl}
         webmUrl={webmUrl}
         thumbnailUrl={thumbnailUrl}
+        locale={locale}
+      />
+
+      {/* Template Picker Modal Dialog */}
+      <TemplatePickerModal
+        isOpen={isTemplatePickerOpen}
+        onClose={() => setIsTemplatePickerOpen(false)}
+        onSelectTemplate={handleApplyTemplate}
+        targetAspectRatio={aspectRatio}
         locale={locale}
       />
     </div>

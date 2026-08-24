@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from 'next/server';
 import { z } from 'zod';
 import { db } from '@quran-media/database';
 import { logger } from '@quran-media/config';
+import { applyTemplateToProject, getTemplateById } from '@quran-media/media/templates';
 
 // In-memory fallback store for offline/development environments
 declare global {
@@ -227,6 +228,32 @@ export async function POST(request: NextRequest) {
     const { title, description, surahNumber, ayahStart, ayahEnd, aspectRatio, locale } = parsed.data;
     const newProjectId = `proj-${Date.now()}`;
 
+    const selectedTemplate = getTemplateById(templatePreset || 'cinematic_nature');
+
+    const projectConfig = applyTemplateToProject(
+      {
+        id: newProjectId,
+        title,
+        aspectRatio,
+        resolution: '1080p',
+        fps: 30,
+        scenes: [
+          {
+            id: 'scene-1',
+            duration: selectedTemplate.scene_structure.defaultSceneDuration,
+            verse: {
+              surahNumber,
+              ayahNumber: ayahStart,
+              textUthmani: 'بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ',
+              translationText: 'In the Name of Allah, Most Compassionate, Most Merciful',
+            },
+          },
+        ],
+      },
+      selectedTemplate.template_id,
+      { overrideAspectRatio: aspectRatio }
+    );
+
     const newProjectRecord = {
       id: newProjectId,
       title,
@@ -240,43 +267,11 @@ export async function POST(request: NextRequest) {
       ayahReferenceAr: `سورة رقم ${surahNumber} • الآيات ${ayahStart}:${ayahEnd}`,
       ayahReferenceEn: `Surah ${surahNumber}:${ayahStart}-${ayahEnd}`,
       aspectRatio,
-      durationSeconds: 15,
-      thumbnailUrl: 'https://images.unsplash.com/photo-1542816417-0983c9c9ad53?w=800&auto=format&fit=crop&q=80',
+      durationSeconds: selectedTemplate.scene_structure.defaultSceneDuration,
+      thumbnailUrl: selectedTemplate.preview.previewImageUrl,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
-      config: {
-        id: newProjectId,
-        title,
-        aspectRatio,
-        resolution: '1080p',
-        fps: 30,
-        scenes: [
-          {
-            id: 'scene-1',
-            duration: 4,
-            background: { type: 'animated_gradient', color: '#020617', gradientColors: ['#064e3b', '#0f172a', '#020617'] },
-            camera: { effect: 'zoom_in', intensity: 0.12, startScale: 1.0, endScale: 1.12 },
-            transition: { type: 'crossfade', duration: 1.0 },
-            verse: {
-              surahNumber,
-              ayahNumber: ayahStart,
-              textUthmani: 'بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ',
-              translationText: 'In the Name of Allah, Most Compassionate, Most Merciful',
-            },
-          },
-        ],
-        audio: {
-          recitation: { reciterId: 7, volume: 1.0, normalize: true },
-          ambient: { preset: 'deep_serenity', volume: 0.16, loop: true },
-          audioWaveform: { enabled: true, style: 'bars', color: '#f59e0b', height: 80, opacity: 0.85 },
-        },
-        subtitles: {
-          enabled: true,
-          style: { fontArabic: 'Amiri Quran', fontTranslation: 'Inter', highlightColorHex: '&H0000D7FF', dualLanguage: true, wordHighlight: true },
-        },
-        intro: { enabled: true, duration: 2, titleAr: title, animation: 'fade' },
-        outro: { enabled: true, duration: 3, reflectionAr: 'سبحان الله وبحمده', callToAction: 'اشترك للمزيد', socialHandle: '@QuranMedia', animation: 'fade' },
-      },
+      config: projectConfig,
     };
 
     // Store in memory store

@@ -16,3 +16,6 @@ export * from './services/subtitle-renderer.service.js';
 export * from './services/video-renderer.service.js';
 export * from './services/thumbnail-generator.service.js';
 export * from './services/media-composition.service.js';
+// Reusable Quran Media Template System
+export * from './templates/index.js';
+

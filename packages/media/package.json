@@ -15,6 +15,11 @@
       "types": "./dist/types/project.types.d.ts",
       "import": "./dist/types/project.types.js",
       "default": "./dist/types/project.types.js"
+    },
+    "./templates": {
+      "types": "./dist/templates/index.d.ts",
+      "import": "./dist/templates/index.js",
+      "default": "./dist/templates/index.js"
     }
   },
   "scripts": {
