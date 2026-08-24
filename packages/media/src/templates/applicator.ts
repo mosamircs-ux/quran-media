@@ -1,7 +1,7 @@
-import type { MediaProject, MediaScene, AspectRatio } from '../types/project.types';
-import { MediaProjectSchema } from '../types/project.types';
-import { QURAN_MEDIA_TEMPLATES } from './catalog';
-import type { QuranMediaTemplate } from './types';
+import type { MediaProject, MediaScene, AspectRatio } from '../types/project.types.js';
+import { MediaProjectSchema } from '../types/project.types.js';
+import { QURAN_MEDIA_TEMPLATES } from './catalog.js';
+import type { QuranMediaTemplate } from './types.js';
 
 export interface ApplyTemplateOptions {
   overrideAspectRatio?: AspectRatio;
@@ -9,7 +9,7 @@ export interface ApplyTemplateOptions {
 }
 
 export function getTemplateById(templateId: string): QuranMediaTemplate {
-  const found = QURAN_MEDIA_TEMPLATES.find((t) => t.template_id === templateId);
+  const found = QURAN_MEDIA_TEMPLATES.find((t: QuranMediaTemplate) => t.template_id === templateId);
   return found || QURAN_MEDIA_TEMPLATES[0]!;
 }
 
@@ -27,32 +27,32 @@ export function applyTemplateToProject(
 
   // Transform existing or default scenes with template visual & camera properties
   const existingScenes = project.scenes || [];
-  const transformedScenes: MediaScene[] = existingScenes.map((scene, index) => {
+  const transformedScenes: MediaScene[] = existingScenes.map((scene: MediaScene, index: number) => {
     return {
       id: scene.id || `scene-${index + 1}`,
       duration: scene.duration || template.scene_structure.defaultSceneDuration,
       background: {
-        type: 'animated_gradient',
-        color: template.colors.secondary,
-        gradientColors: template.colors.backgroundGradient,
-        gradientAngle: 135,
-        blurRadius: 0,
-        opacity: 1,
+        ...(scene.background || {}),
+        type: scene.background?.type || 'animated_gradient',
+        color: scene.background?.color || template.colors.secondary,
+        gradientColors: scene.background?.gradientColors || template.colors.backgroundGradient,
+        gradientAngle: scene.background?.gradientAngle ?? 135,
+        blurRadius: scene.background?.blurRadius ?? 0,
+        opacity: scene.background?.opacity ?? 1,
         overlayColor: template.colors.overlayColor,
         overlayOpacity: 0.45,
-        ...scene.background,
       },
       camera: {
-        effect: template.animation.cameraMotion,
-        intensity: template.animation.cameraIntensity,
-        startScale: 1.0,
-        endScale: 1.0 + template.animation.cameraIntensity,
-        ...scene.camera,
+        ...(scene.camera || {}),
+        effect: scene.camera?.effect || template.animation.cameraMotion,
+        intensity: scene.camera?.intensity ?? template.animation.cameraIntensity,
+        startScale: scene.camera?.startScale ?? 1.0,
+        endScale: scene.camera?.endScale ?? (1.0 + template.animation.cameraIntensity),
       },
       transition: {
-        type: template.transitions.sceneTransition,
-        duration: template.transitions.transitionDuration,
-        ...scene.transition,
+        ...(scene.transition || {}),
+        type: scene.transition?.type || template.transitions.sceneTransition,
+        duration: scene.transition?.duration ?? template.transitions.transitionDuration,
       },
       verse: scene.verse,
     };
@@ -64,10 +64,16 @@ export function applyTemplateToProject(
     style: {
       fontArabic: template.fonts.arabicFont,
       fontTranslation: template.fonts.translationFont,
-      fontSizeScale: template.fonts.fontSizeScale,
-      colorArabic: template.colors.textArabic,
-      colorTranslation: template.colors.textTranslation,
+      primaryColorHex: template.colors.textArabic,
       highlightColorHex: template.colors.highlightKaraoke,
+      outlineColorHex: '&H00000000',
+      outlineWidth: 2,
+      shadowWidth: 1,
+      fontSizeArabic: 42 * template.fonts.fontSizeScale,
+      fontSizeTranslation: 24,
+      alignment: template.text_positions.arabicVerticalPosition === 'middle' ? 5 : 2,
+      marginV: template.text_positions.safeZoneMarginPx,
+      rtl: true,
       verticalPosition: template.text_positions.arabicVerticalPosition,
       dualLanguage: template.text_positions.dualLanguageStacked,
       wordHighlight: template.text_positions.wordHighlightActive,
@@ -99,13 +105,19 @@ export function applyTemplateToProject(
       enabled: template.animation.waveformVisualizer,
       style: template.animation.waveformStyle,
       color: template.colors.accent,
+      backgroundColor: 'rgba(0,0,0,0)',
       height: 80,
       opacity: 0.85,
+      position: 'bottom' as const,
+      scale: 'lin' as const,
       ...(project.audio?.audioWaveform || {}),
     },
     sidechainDucking: {
       enabled: template.audio_behavior.sidechainDucking,
       duckAmountDb: template.audio_behavior.duckAmountDb,
+      thresholdDb: -24,
+      attackMs: 20,
+      releaseMs: 250,
       ...(project.audio?.sidechainDucking || {}),
     },
   };

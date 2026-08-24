@@ -1,3 +1,3 @@
-export * from './types';
-export * from './catalog';
-export * from './applicator';
+export * from './types.js';
+export * from './catalog.js';
+export * from './applicator.js';

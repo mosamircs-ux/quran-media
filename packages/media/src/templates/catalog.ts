@@ -1,4 +1,4 @@
-import type { QuranMediaTemplate } from './types';
+import type { QuranMediaTemplate } from './types.js';
 
 export const QURAN_MEDIA_TEMPLATES: QuranMediaTemplate[] = [
   // 1. Minimal Quran

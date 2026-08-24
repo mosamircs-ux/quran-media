@@ -358,7 +358,7 @@ export const OutroConfigSchema = z.object({
   reflectionEn: z.string().optional(),
   callToAction: z.string().optional().default('اشترك للمزيد من روائع التلاوات والقصص القرآنية'),
   socialHandle: z.string().optional().default('@QuranMedia'),
-  animation: z.enum(['fade', 'slow_drift']).default('fade'),
+  animation: z.enum(['fade', 'slow_drift', 'slide_up']).default('fade'),
 });
 export type OutroConfig = z.infer<typeof OutroConfigSchema>;
 

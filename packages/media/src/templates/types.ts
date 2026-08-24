@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { AspectRatioSchema } from '../types/project.types';
+import { AspectRatioSchema } from '../types/project.types.js';
 
 export const TemplateCategorySchema = z.enum([
   'minimal',
@@ -23,9 +23,9 @@ export const TemplateFontsSchema = z.object({
 export type TemplateFonts = z.infer<typeof TemplateFontsSchema>;
 
 export const TemplateColorsSchema = z.object({
-  primary: z.string(), // Hex e.g. '#10b981'
-  secondary: z.string(), // Hex e.g. '#064e3b'
-  accent: z.string(), // Hex e.g. '#f59e0b'
+  primary: z.string(),
+  secondary: z.string(),
+  accent: z.string(),
   textArabic: z.string().default('#fef3c7'),
   textTranslation: z.string().default('#ffffff'),
   highlightKaraoke: z.string().default('#fbbf24'),
@@ -94,7 +94,7 @@ export const TemplateSceneStructureSchema = z.object({
   introAnimation: z.enum(['fade', 'zoom_reveal', 'slide_up']).default('fade'),
   includeOutro: z.boolean().default(true),
   outroDuration: z.number().default(3),
-  outroAnimation: z.enum(['fade', 'slow_drift']).default('fade'),
+  outroAnimation: z.enum(['fade', 'slow_drift', 'slide_up']).default('fade'),
   stylePreset: z.string().default('cinematic_dark'),
 });
 
