@@ -8,13 +8,17 @@ export interface ApplyTemplateOptions {
   preserveCustomReciter?: boolean;
 }
 
+export type PartialMediaProject = Omit<Partial<MediaProject>, 'scenes'> & {
+  scenes?: Array<Partial<MediaScene> & { id?: string; duration?: number; verse?: any }>;
+};
+
 export function getTemplateById(templateId: string): QuranMediaTemplate {
   const found = QURAN_MEDIA_TEMPLATES.find((t: QuranMediaTemplate) => t.template_id === templateId);
   return found || QURAN_MEDIA_TEMPLATES[0]!;
 }
 
 export function applyTemplateToProject(
-  project: Partial<MediaProject>,
+  project: PartialMediaProject,
   templateId: string,
   options: ApplyTemplateOptions = {}
 ): MediaProject {
@@ -27,7 +31,7 @@ export function applyTemplateToProject(
 
   // Transform existing or default scenes with template visual & camera properties
   const existingScenes = project.scenes || [];
-  const transformedScenes: MediaScene[] = existingScenes.map((scene: MediaScene, index: number) => {
+  const transformedScenes: MediaScene[] = existingScenes.map((scene, index: number) => {
     return {
       id: scene.id || `scene-${index + 1}`,
       duration: scene.duration || template.scene_structure.defaultSceneDuration,

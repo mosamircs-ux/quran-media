@@ -225,7 +225,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { title, description, surahNumber, ayahStart, ayahEnd, aspectRatio, locale } = parsed.data;
+    const { title, description, surahNumber, ayahStart, ayahEnd, aspectRatio, locale, templatePreset } = parsed.data;
     const newProjectId = `proj-${Date.now()}`;
 
     const selectedTemplate = getTemplateById(templatePreset || 'cinematic_nature');

@@ -29,6 +29,8 @@ import {
   Feather,
 } from 'lucide-react';
 import { STORY_PRESETS, type StoryPreset } from '@/app/api/story/presets/route';
+import { TemplatePickerModal } from '@/components/templates/template-picker-modal';
+import { QURAN_MEDIA_TEMPLATES, type QuranMediaTemplate } from '@quran-media/media/templates';
 
 interface StoryScene {
   sceneNumber: number;
@@ -93,9 +95,10 @@ export function QuranStoryGeneratorClient({ locale, initialSurahId = 2, initialA
   const [aiProvider, setAiProvider] = useState<string>('gemini');
   const [customPromptFocus, setCustomPromptFocus] = useState<string>('');
 
-  // UI state
   const [surahSearchQuery, setSurahSearchQuery] = useState<string>('');
   const [showSurahDropdown, setShowSurahDropdown] = useState<boolean>(false);
+  const [selectedTemplate, setSelectedTemplate] = useState<QuranMediaTemplate>(QURAN_MEDIA_TEMPLATES[1] || QURAN_MEDIA_TEMPLATES[0]!);
+  const [isTemplatePickerOpen, setIsTemplatePickerOpen] = useState<boolean>(false);
   const [showLiveScripturePeek, setShowLiveScripturePeek] = useState<boolean>(true);
   const [activeTab, setActiveTab] = useState<'storyboard' | 'json' | 'sources'>('storyboard');
   const [copiedJson, setCopiedJson] = useState<boolean>(false);
@@ -670,6 +673,50 @@ export function QuranStoryGeneratorClient({ locale, initialSurahId = 2, initialA
             </div>
           </div>
 
+          {/* Quran Media Template Selector */}
+          <div className="space-y-2 pt-2 border-t border-slate-100 dark:border-slate-800/60">
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+                <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+                <span>{isAr ? 'قالب الهوية والإنتاج المرئي' : 'Quran Media Visual Template'}</span>
+              </label>
+              <button
+                type="button"
+                onClick={() => setIsTemplatePickerOpen(true)}
+                className="text-xs font-bold text-amber-600 dark:text-amber-400 hover:underline cursor-pointer"
+              >
+                {isAr ? 'استعراض 18 قالباً ←' : 'Browse 18 Templates →'}
+              </button>
+            </div>
+
+            <div
+              onClick={() => setIsTemplatePickerOpen(true)}
+              className="p-3.5 rounded-2xl border border-slate-200 dark:border-slate-800 hover:border-amber-500/60 bg-slate-50 dark:bg-slate-950 flex items-center justify-between cursor-pointer transition-all shadow-sm group"
+            >
+              <div className="flex items-center gap-3">
+                <div
+                  className="w-11 h-11 rounded-xl border border-slate-700/50 flex items-center justify-center shrink-0 shadow-inner"
+                  style={{ background: selectedTemplate.preview.backdropCss }}
+                >
+                  <Sparkles className="w-4 h-4 text-amber-300 drop-shadow" />
+                </div>
+                <div className="space-y-0.5">
+                  <div className="text-xs font-bold text-slate-900 dark:text-slate-100 group-hover:text-amber-500 transition-colors flex items-center gap-2">
+                    <span>{isAr ? selectedTemplate.nameAr : selectedTemplate.nameEn}</span>
+                    <span className="text-[10px] text-amber-500 font-mono">[{selectedTemplate.fonts.arabicFont}]</span>
+                  </div>
+                  <div className="text-[11px] text-slate-500 dark:text-slate-400 line-clamp-1">
+                    {isAr ? selectedTemplate.descriptionAr : selectedTemplate.descriptionEn}
+                  </div>
+                </div>
+              </div>
+
+              <span className="py-1 px-2.5 rounded-lg bg-slate-200 dark:bg-slate-900 border border-slate-300 dark:border-slate-800 text-[11px] font-semibold text-slate-700 dark:text-slate-300">
+                {isAr ? 'تغيير' : 'Change'}
+              </span>
+            </div>
+          </div>
+
           {/* Custom Focus Request */}
           <div className="space-y-1.5 pt-2 border-t border-slate-100 dark:border-slate-800/60">
             <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
@@ -1085,6 +1132,15 @@ export function QuranStoryGeneratorClient({ locale, initialSurahId = 2, initialA
           </div>
         </div>
       )}
+
+      {/* Template Picker Modal Dialog */}
+      <TemplatePickerModal
+        isOpen={isTemplatePickerOpen}
+        onClose={() => setIsTemplatePickerOpen(false)}
+        selectedTemplateId={selectedTemplate.template_id}
+        onSelectTemplate={(tpl) => setSelectedTemplate(tpl)}
+        locale={locale}
+      />
     </div>
   );
 }
