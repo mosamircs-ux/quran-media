@@ -5,6 +5,8 @@ import { StoriesListClient } from '@/components/stories/stories-list-client';
 
 import { generateLocalizedMetadata } from '@/lib/seo';
 
+export const revalidate = 3600; // 1 hour ISR
+
 export async function generateMetadata({
   params,
 }: {

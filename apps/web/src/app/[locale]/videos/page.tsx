@@ -5,6 +5,8 @@ import { type Locale } from '@quran-media/i18n';
 import { generateLocalizedMetadata, generateBreadcrumbsJsonLd } from '@/lib/seo';
 import { Film, Play, Sparkles, Download, Share2 } from 'lucide-react';
 
+export const revalidate = 3600; // 1 hour ISR
+
 interface VideosPageProps {
   params: Promise<{ locale: Locale }>;
 }

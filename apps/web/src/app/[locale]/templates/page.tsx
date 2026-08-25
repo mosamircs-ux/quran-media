@@ -6,6 +6,8 @@ import { TemplateCard } from '@/components/templates/template-card';
 import { QURAN_MEDIA_TEMPLATES } from '@quran-media/media/templates';
 import { Sparkles, Layers } from 'lucide-react';
 
+export const revalidate = 86400; // 24 hours ISR
+
 interface TemplatesPageProps {
   params: Promise<{ locale: Locale }>;
 }

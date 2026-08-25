@@ -6,6 +6,8 @@ import { ALL_SURAHS } from '@/lib/quran-surahs';
 import { generateLocalizedMetadata, generateBreadcrumbsJsonLd } from '@/lib/seo';
 import { BookOpen, Sparkles, Search, Layers, Play } from 'lucide-react';
 
+export const revalidate = 86400; // 24 hours ISR
+
 interface SurahsPageProps {
   params: Promise<{ locale: Locale }>;
 }

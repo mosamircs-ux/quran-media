@@ -24,6 +24,8 @@ import {
   CheckCircle2,
 } from 'lucide-react';
 
+export const revalidate = 86400; // 24 hours ISR
+
 interface AyahPageProps {
   params: Promise<{
     locale: Locale;
