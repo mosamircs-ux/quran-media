@@ -23,6 +23,7 @@ import {
   LayoutDashboard,
   LogOut,
   FolderKanban,
+  SlidersHorizontal,
 } from 'lucide-react';
 
 interface NavbarProps {
@@ -153,11 +154,20 @@ export function Navbar({ locale }: NavbarProps) {
                   </Link>
 
                   <Link
+                    href={`/${locale}/admin`}
+                    onClick={() => setUserDropdownOpen(false)}
+                    className="flex items-center gap-2 px-3 py-2 text-xs font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors"
+                  >
+                    <SlidersHorizontal className="w-4 h-4 text-amber-500" />
+                    <span>{isAr ? 'إدارة النظام (Admin)' : 'Admin Dashboard'}</span>
+                  </Link>
+
+                  <Link
                     href={`/${locale}/studio`}
                     onClick={() => setUserDropdownOpen(false)}
                     className="flex items-center gap-2 px-3 py-2 text-xs font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors"
                   >
-                    <FolderKanban className="w-4 h-4 text-amber-500" />
+                    <FolderKanban className="w-4 h-4 text-teal-500" />
                     <span>{isAr ? 'مشاريع الاستوديو' : 'Studio Projects'}</span>
                   </Link>
 

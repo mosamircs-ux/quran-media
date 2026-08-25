@@ -2,7 +2,7 @@ export interface UserTokenPayload {
   userId: string;
   email: string;
   name: string;
-  role: 'USER' | 'CREATOR' | 'ADMIN';
+  role: 'SUPER_ADMIN' | 'ADMIN' | 'EDITOR' | 'MODERATOR' | 'CREATOR' | 'USER';
   locale: string;
   preferredReciter?: number;
   iat?: number;

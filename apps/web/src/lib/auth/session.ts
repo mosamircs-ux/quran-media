@@ -4,12 +4,14 @@ import { verifyJWT, signJWT, type UserTokenPayload } from './jwt';
 
 export const SESSION_COOKIE_NAME = 'quran_media_session';
 
+export type RoleType = 'SUPER_ADMIN' | 'ADMIN' | 'EDITOR' | 'MODERATOR' | 'CREATOR' | 'USER';
+
 export interface AuthUser {
   id: string;
   email: string;
   name: string;
   image?: string;
-  role: 'USER' | 'CREATOR' | 'ADMIN';
+  role: RoleType;
   locale: string;
   preferredReciter: number;
 }
@@ -21,13 +23,13 @@ export interface StoredUser {
   name: string;
   passwordHash?: string;
   image?: string;
-  role: 'USER' | 'CREATOR' | 'ADMIN';
+  role: RoleType;
   locale: string;
   preferredReciter: number;
   createdAt: Date;
 }
 
-// Pre-seeded demo account for one-click testing
+// Pre-seeded demo account for one-click creator testing
 export const DEMO_USER: StoredUser = {
   id: 'usr_demo_creator_01',
   email: 'creator@quranmedia.studio',
@@ -36,6 +38,18 @@ export const DEMO_USER: StoredUser = {
   role: 'CREATOR',
   locale: 'ar',
   preferredReciter: 7, // Mishari Rashid Alafasy
+  createdAt: new Date('2026-01-01'),
+};
+
+// Pre-seeded Super Admin account for admin dashboard testing
+export const ADMIN_USER: StoredUser = {
+  id: 'usr_super_admin_01',
+  email: 'admin@quranmedia.studio',
+  name: 'عبد الله السعدي (مدير النظام)',
+  image: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&auto=format&fit=crop&q=80',
+  role: 'SUPER_ADMIN',
+  locale: 'ar',
+  preferredReciter: 7,
   createdAt: new Date('2026-01-01'),
 };
 
@@ -48,6 +62,7 @@ export function getUserStore(): Map<string, StoredUser> {
   if (!globalThis.globalUserStore) {
     globalThis.globalUserStore = new Map<string, StoredUser>();
     globalThis.globalUserStore.set(DEMO_USER.email.toLowerCase(), DEMO_USER);
+    globalThis.globalUserStore.set(ADMIN_USER.email.toLowerCase(), ADMIN_USER);
   }
   return globalThis.globalUserStore;
 }

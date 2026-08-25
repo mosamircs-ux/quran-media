@@ -15,7 +15,10 @@ datasource db {
 enum Role {
   USER
   CREATOR
+  MODERATOR
+  EDITOR
   ADMIN
+  SUPER_ADMIN
 }
 
 enum ProjectStatus {
