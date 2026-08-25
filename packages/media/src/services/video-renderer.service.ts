@@ -7,6 +7,7 @@ import type {
   OutputFormat,
 } from '../types/project.types.js';
 import { logger, MediaProcessingError } from '@quran-media/config';
+import { sanitizeFfmpegFilterPath } from '../utils/ffmpeg-security.js';
 
 export interface VideoEncodingProgress {
   percent: number;
@@ -219,10 +220,7 @@ export class VideoRenderer {
 
       // 1. Burn Subtitles (ASS / SRT)
       if (subtitlePath && fs.existsSync(subtitlePath)) {
-        // Format path for FFmpeg filter on Windows: forward slashes, escaped colon
-        const sanitizedAssPath = subtitlePath
-          .replace(/\\/g, '/')
-          .replace(/^([A-Za-z]):/, '$1\\:');
+        const sanitizedAssPath = sanitizeFfmpegFilterPath(subtitlePath);
         videoFilters.push(`ass='${sanitizedAssPath}'`);
       }
 
