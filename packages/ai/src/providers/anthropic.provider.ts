@@ -21,7 +21,7 @@ export class AnthropicProvider extends BaseAIProvider {
   constructor() {
     super();
     if (env.ANTHROPIC_API_KEY) {
-      this.client = new Anthropic({ apiKey: env.ANTHROPIC_API_KEY });
+      this.client = new Anthropic({ apiKey: env.ANTHROPIC_API_KEY, timeout: 30000 });
     }
   }
 

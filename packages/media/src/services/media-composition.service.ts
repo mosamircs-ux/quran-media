@@ -281,10 +281,18 @@ export class MediaCompositionService {
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       await report('FAILED', 0, `Rendering failed: ${message}`);
+      // Clean up entire failed workspace to prevent disk leak
+      if (!options.keepTempFiles) {
+        try {
+          if (fs.existsSync(workDir)) {
+            fs.rmSync(workDir, { recursive: true, force: true });
+          }
+        } catch {}
+      }
       throw new MediaProcessingError(`Video composition failed: ${message}`, err);
     } finally {
       // Clean up temporary intermediate files unless keepTempFiles is requested
-      if (!options.keepTempFiles) {
+      if (!options.keepTempFiles && fs.existsSync(workDir)) {
         this.cleanupIntermediates(workDir);
       }
     }
@@ -311,9 +319,19 @@ export class MediaCompositionService {
 
   private cleanupIntermediates(workDir: string): void {
     try {
+      if (!fs.existsSync(workDir)) return;
       const files = fs.readdirSync(workDir);
       for (const file of files) {
-        if (file.startsWith('bg-scene-') || file.startsWith('scene-clip-') || file.startsWith('concatenated-scenes')) {
+        if (
+          file.startsWith('bg-scene-') ||
+          file.startsWith('scene-clip-') ||
+          file.startsWith('concatenated-scenes') ||
+          file.startsWith('recitation-') ||
+          file.startsWith('ambient-') ||
+          file.startsWith('waveform-') ||
+          file.startsWith('temp-') ||
+          file.endsWith('.txt')
+        ) {
           try {
             fs.unlinkSync(path.join(workDir, file));
           } catch {}

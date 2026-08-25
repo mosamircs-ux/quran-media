@@ -26,6 +26,7 @@ export class OpenAIProvider extends BaseAIProvider {
       this.client = new OpenAI({
         apiKey: env.OPENAI_API_KEY,
         organization: env.OPENAI_ORG_ID || undefined,
+        timeout: 30000,
       });
     }
   }

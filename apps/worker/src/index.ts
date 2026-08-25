@@ -17,17 +17,38 @@ const healthServer = startHealthServer();
 async function shutdown(signal: string) {
   logger.info({ signal }, 'Shutting down worker process gracefully...');
 
-  healthServer.close();
+  // Set 15s hard timeout safeguard
+  const forceExitTimeout = setTimeout(() => {
+    logger.error('Graceful shutdown timed out after 15s. Forcing exit.');
+    process.exit(1);
+  }, 15000);
+  forceExitTimeout.unref();
 
-  await Promise.all([
-    videoWorker.close(),
-    imageWorker.close(),
-    storyWorker.close(),
-  ]);
+  try {
+    healthServer.close();
 
-  await db.$disconnect();
-  logger.info('Worker shut down cleanly. Exiting.');
-  process.exit(0);
+    // 1. Pause workers to stop accepting new jobs
+    await Promise.allSettled([
+      videoWorker.pause(true),
+      imageWorker.pause(true),
+      storyWorker.pause(true),
+    ]);
+
+    // 2. Close workers and wait for current in-flight renders
+    await Promise.allSettled([
+      videoWorker.close(),
+      imageWorker.close(),
+      storyWorker.close(),
+    ]);
+
+    // 3. Disconnect database client
+    await db.$disconnect();
+    logger.info('Worker shut down cleanly. Exiting.');
+    process.exit(0);
+  } catch (err) {
+    logger.error({ err }, 'Error during worker graceful shutdown');
+    process.exit(1);
+  }
 }
 
 process.on('SIGTERM', () => shutdown('SIGTERM'));

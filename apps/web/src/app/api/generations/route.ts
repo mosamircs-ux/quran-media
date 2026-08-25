@@ -4,6 +4,7 @@ import { db } from '@quran-media/database';
 import { Queue } from 'bullmq';
 import { Redis } from 'ioredis';
 import { env, QUEUE_NAMES, logger } from '@quran-media/config';
+import { enforceRateLimit } from '@/lib/security/rate-limiter';
 
 const createGenerationSchema = z.object({
   projectId: z.string().optional(),
@@ -29,6 +30,9 @@ function getQueueConnection() {
 }
 
 export async function POST(request: NextRequest) {
+  const rateLimitRes = enforceRateLimit(request, 'generations');
+  if (rateLimitRes) return rateLimitRes;
+
   try {
     const json = await request.json();
     const parsed = createGenerationSchema.safeParse(json);

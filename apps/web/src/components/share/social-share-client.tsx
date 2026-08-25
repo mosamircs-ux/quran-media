@@ -95,6 +95,7 @@ export function SocialShareClient({ share, socialCopy, locale }: SocialShareClie
               playsInline
               autoPlay
               muted={isMuted}
+              aria-label={share.title}
               className="w-full h-full object-cover"
               onPlay={() => setIsPlaying(true)}
               onPause={() => setIsPlaying(false)}
@@ -106,13 +107,14 @@ export function SocialShareClient({ share, socialCopy, locale }: SocialShareClie
                 9:16 • 1080x1920
               </span>
               <span className="px-2.5 py-1 rounded-full bg-black/70 backdrop-blur-md text-[10px] font-bold text-white border border-slate-700">
-                {share.durationSeconds}s
+                <bdi>{share.durationSeconds}s</bdi>
               </span>
             </div>
 
             {/* Sound Toggle Button */}
             <button
               onClick={() => setIsMuted(!isMuted)}
+              aria-label={isMuted ? (isAr ? 'تشغيل الصوت' : 'Unmute audio') : (isAr ? 'كتم الصوت' : 'Mute audio')}
               className="absolute top-4 end-4 z-20 p-2 rounded-full bg-black/70 backdrop-blur-md text-white hover:bg-black/90 transition-all cursor-pointer shadow"
             >
               {isMuted ? <VolumeX className="w-4 h-4 text-rose-400" /> : <Volume2 className="w-4 h-4 text-emerald-400" />}
@@ -124,7 +126,7 @@ export function SocialShareClient({ share, socialCopy, locale }: SocialShareClie
                 {share.textUthmani}
               </p>
               <p className="text-[11px] text-amber-300 text-center truncate">
-                {isAr ? `سورة ${share.surahNameAr}` : `Surah ${share.surahNameEn}`} [{share.verseKey}]
+                {isAr ? `سورة ${share.surahNameAr}` : `Surah ${share.surahNameEn}`} [<bdi>{share.verseKey}</bdi>]
               </p>
             </div>
           </div>
@@ -134,6 +136,7 @@ export function SocialShareClient({ share, socialCopy, locale }: SocialShareClie
             <a
               href={share.videoUrl}
               download={`${share.id}-1080x1920.mp4`}
+              aria-label={isAr ? 'تحميل الفيديو بجودة عالية 1080x1920' : 'Download HD 1080x1920 video'}
               className="flex-1 py-3 px-4 rounded-2xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs flex items-center justify-center gap-2 shadow-lg shadow-amber-500/20 transition-all cursor-pointer"
             >
               <Download className="w-4 h-4" />
@@ -148,7 +151,7 @@ export function SocialShareClient({ share, socialCopy, locale }: SocialShareClie
           <div className="p-6 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm space-y-4">
             <div className="flex items-center justify-between">
               <span className="px-3 py-1 rounded-full text-xs font-black bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
-                {isAr ? `سورة ${share.surahNameAr}` : `Surah ${share.surahNameEn}`} • آية {share.verseKey}
+                {isAr ? `سورة ${share.surahNameAr}` : `Surah ${share.surahNameEn}`} • آية <bdi>{share.verseKey}</bdi>
               </span>
               <span className="text-xs text-slate-400">{share.reciterName}</span>
             </div>
@@ -186,10 +189,14 @@ export function SocialShareClient({ share, socialCopy, locale }: SocialShareClie
             </div>
 
             {/* Platform Selection Tabs */}
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap gap-2" role="tablist" aria-label="Social Media Platforms">
               {platforms.map((p) => (
                 <button
                   key={p.id}
+                  role="tab"
+                  id={`tab-${p.id}`}
+                  aria-selected={activeTab === p.id}
+                  aria-controls={`panel-${p.id}`}
                   onClick={() => setActiveTab(p.id)}
                   className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                     activeTab === p.id
