@@ -10,7 +10,7 @@ import { Footer } from '../../components/footer';
 const inter = Inter({ subsets: ['latin'], variable: '--font-sans' });
 const amiri = Amiri({ subsets: ['arabic'], weight: ['400', '700'], variable: '--font-arabic' });
 
-import { generateLocalizedMetadata } from '@/lib/seo';
+import { generateLocalizedMetadata, generateWebsiteJsonLd, generateOrganizationJsonLd } from '@/lib/seo';
 
 export async function generateMetadata({
   params,
@@ -31,8 +31,21 @@ export default async function RootLayout({
   const { locale } = await params;
   const meta = LOCALES_META[locale] || LOCALES_META.ar;
 
+  const websiteJsonLd = generateWebsiteJsonLd(locale);
+  const organizationJsonLd = generateOrganizationJsonLd(locale);
+
   return (
     <html lang={locale} dir={meta.dir} className={`${inter.variable} ${amiri.variable} dark`} suppressHydrationWarning>
+      <head>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteJsonLd) }}
+        />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd) }}
+        />
+      </head>
       <body className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 antialiased selection:bg-amber-500/30 selection:text-amber-200">
         <AuthProvider>
           <ThemeProvider>

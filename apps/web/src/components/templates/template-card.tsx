@@ -17,7 +17,7 @@ import {
 interface TemplateCardProps {
   template: QuranMediaTemplate;
   isSelected?: boolean;
-  onSelect: (template: QuranMediaTemplate) => void;
+  onSelect?: (template: QuranMediaTemplate) => void;
   onPreview?: (template: QuranMediaTemplate) => void;
   locale: Locale;
 }
@@ -33,7 +33,7 @@ export function TemplateCard({
 
   return (
     <div
-      onClick={() => onSelect(template)}
+      onClick={() => onSelect && onSelect(template)}
       className={`group relative rounded-3xl border p-5 flex flex-col justify-between gap-4 cursor-pointer transition-all duration-300 select-none shadow-lg overflow-hidden ${
         isSelected
           ? 'bg-slate-900 border-emerald-500 ring-2 ring-emerald-500/50 shadow-emerald-950/40 -translate-y-1'
