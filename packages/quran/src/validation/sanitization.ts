@@ -81,3 +81,14 @@ export function sanitizeHtml(rawHtml: string): string {
 
   return clean.trim();
 }
+
+/**
+ * Normalizes and sanitizes Arabic Quranic text, stripping non-printable zero-width characters.
+ */
+export function sanitizeQuranicText(text: string): string {
+  if (!text || typeof text !== 'string') return '';
+  return text
+    .replace(/[\u200B-\u200D\uFEFF]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+}

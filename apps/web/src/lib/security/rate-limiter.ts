@@ -64,6 +64,10 @@ export function checkRateLimit(
   };
 }
 
+export function clearRateLimitStore(): void {
+  memoryStore.clear();
+}
+
 /**
  * Middleware helper for rate limiting Next.js API route handlers
  */

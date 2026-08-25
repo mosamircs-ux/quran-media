@@ -1,0 +1,69 @@
+name: Quran Media Platform CI/CD
+
+on:
+  push:
+    branches: [main, master, develop]
+  pull_request:
+    branches: [main, master, develop]
+
+jobs:
+  test:
+    name: Continuous Integration & Automated Test Suite
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    services:
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 20.x
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'pnpm'
+
+      - name: Install pnpm Package Manager
+        uses: pnpm/action-setup@v3
+        with:
+          version: 9.15.4
+          run_install: false
+
+      - name: Install Monorepo Dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Generate Prisma Database Client
+        run: pnpm --filter @quran-media/database run db:generate
+
+      - name: Build Monorepo Packages
+        run: |
+          pnpm --filter @quran-media/config run build
+          pnpm --filter @quran-media/database run build
+          pnpm --filter @quran-media/quran run build
+          pnpm --filter @quran-media/media run build
+
+      - name: TypeScript Typecheck Verification
+        run: pnpm run typecheck
+
+      - name: Code Style & Lint Verification
+        run: pnpm run lint
+
+      - name: Run Automated Security Audit Suite
+        run: npx tsx apps/web/src/lib/security/__tests__/security-audit.test.ts
+
+      - name: Run Complete Automated Test Suite (Unit + Integration + E2E)
+        run: npx tsx tests/run-all-tests.ts
+        env:
+          REDIS_URL: redis://localhost:6379
+          JWT_SECRET: ci-testing-jwt-secret-key-1234567890
+          NEXT_PUBLIC_SITE_URL: http://localhost:3006

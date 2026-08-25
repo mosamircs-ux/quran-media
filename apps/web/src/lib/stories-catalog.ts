@@ -629,3 +629,11 @@ export const QURAN_STORIES: QuranStory[] = [
     ],
   },
 ];
+
+export function getStoryBySlug(slug: string): QuranStory | undefined {
+  return QURAN_STORIES.find((s) => s.slug === slug || s.id === slug);
+}
+
+export function getStoriesByCategory(category: StoryCategory): QuranStory[] {
+  return QURAN_STORIES.filter((s) => s.category === category);
+}

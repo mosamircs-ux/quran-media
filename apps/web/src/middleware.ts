@@ -49,6 +49,10 @@ export function middleware(request: NextRequest) {
         }
       );
     }
+
+    const response = NextResponse.next();
+    applySecurityHeaders(response);
+    return response;
   }
 
   // 2. Ignore static assets and system files
