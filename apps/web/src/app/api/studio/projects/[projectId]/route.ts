@@ -29,12 +29,11 @@ export async function GET(
       const dbProject = await db.project.findUnique({
         where: { id: projectId },
         include: {
-          generations: {
+          jobs: {
             orderBy: { createdAt: 'desc' },
             take: 5,
-            include: { mediaAssets: true },
           },
-          mediaAssets: {
+          assets: {
             orderBy: { createdAt: 'desc' },
           },
         },
@@ -42,8 +41,8 @@ export async function GET(
 
       if (dbProject) {
         project = dbProject;
-        latestGeneration = dbProject.generations[0];
-        latestAsset = latestGeneration?.mediaAssets[0] || dbProject.mediaAssets[0];
+        latestGeneration = (dbProject as any).jobs?.[0];
+        latestAsset = (dbProject as any).assets?.[0];
       }
     } catch {}
 
@@ -106,7 +105,7 @@ export async function GET(
           previewUrl: (latestAsset?.metadata as any)?.previewUrl || (latestGeneration?.result as any)?.previewUrl || null,
           duration: latestAsset?.duration || 15,
         },
-        history: project.generations.map((g: any) => ({
+        history: (project.jobs || []).map((g: any) => ({
           id: g.id,
           status: g.status,
           progress: g.progress,

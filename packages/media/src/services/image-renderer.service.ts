@@ -1,4 +1,3 @@
-import sharp from 'sharp';
 import type {
   SceneBackground,
   SceneOverlay,
@@ -7,6 +6,11 @@ import type {
   OutroConfig,
   AspectRatio,
 } from '../types/project.types.js';
+
+async function getSharp() {
+  const mod = await import('sharp');
+  return (mod && (mod as any).default) ? (mod as any).default : mod;
+}
 
 export interface ImageRenderResult {
   buffer: Buffer;
@@ -24,6 +28,7 @@ export class ImageRenderer {
     width: number,
     height: number
   ): Promise<Buffer> {
+    const sharp = await getSharp();
     const {
       type,
       color = '#020617',
@@ -38,7 +43,7 @@ export class ImageRenderer {
 
     if (src && (type === 'image' || type === 'video')) {
       try {
-        let baseImage: sharp.Sharp;
+        let baseImage: any;
         if (src.startsWith('data:')) {
           const base64Data = src.split(',')[1] || '';
           baseImage = sharp(Buffer.from(base64Data, 'base64'));
@@ -131,6 +136,7 @@ export class ImageRenderer {
     height: number,
     _aspectRatio: AspectRatio = '9:16'
   ): Promise<Buffer> {
+    const sharp = await getSharp();
     const textUthmani = verse.textUthmani || verse.textSimple || '';
     const translationText = verse.translationText || '';
     const surahNumber = verse.surahNumber || 1;
@@ -226,6 +232,7 @@ export class ImageRenderer {
    * Renders an Intro Slate Card.
    */
   async renderIntroCard(intro: IntroConfig, width: number, height: number): Promise<Buffer> {
+    const sharp = await getSharp();
     const titleAr = intro.titleAr || 'القرآن الكريم';
     const titleEn = intro.titleEn || 'The Noble Quran';
     const badge = intro.badge || 'تلاوة خاشعة مرئية';
@@ -282,6 +289,7 @@ export class ImageRenderer {
    * Renders an Outro Reflection / Call-to-Action Card.
    */
   async renderOutroCard(outro: OutroConfig, width: number, height: number): Promise<Buffer> {
+    const sharp = await getSharp();
     const reflectionAr = outro.reflectionAr || 'سبحان الله وبحمده، سبحان الله العظيم';
     const cta = outro.callToAction || 'اشترك للمزيد من روائع التلاوات والقصص القرآنية';
     const handle = outro.socialHandle || '@QuranMedia';

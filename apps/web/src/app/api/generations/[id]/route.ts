@@ -9,9 +9,6 @@ export async function GET(
 
   const generation = await db.generation.findUnique({
     where: { id },
-    include: {
-      mediaAssets: true,
-    },
   });
 
   if (!generation) {
@@ -30,13 +27,6 @@ export async function GET(
       currentStep: generation.currentStep,
       result: generation.result,
       error: generation.error,
-      mediaAssets: (generation.mediaAssets as any[])?.map((a: any) => ({
-        id: a.id,
-        type: a.type,
-        storageUrl: a.storageUrl,
-        aspectRatio: a.aspectRatio,
-        fileSize: a.fileSize.toString(),
-      })),
       createdAt: generation.createdAt,
       completedAt: generation.completedAt,
     },

@@ -28,7 +28,7 @@ import {
   Video,
   Feather,
 } from 'lucide-react';
-import { STORY_PRESETS, type StoryPreset } from '@/app/api/story/presets/route';
+import { STORY_PRESETS, type StoryPreset } from '@/lib/story-presets';
 import { TemplatePickerModal } from '@/components/templates/template-picker-modal';
 import { QURAN_MEDIA_TEMPLATES, type QuranMediaTemplate } from '@quran-media/media/templates';
 

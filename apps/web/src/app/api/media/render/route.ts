@@ -65,33 +65,23 @@ export async function POST(request: NextRequest) {
           data: {
             userId: user.id,
             title: project.title || 'Studio Production',
-            locale: 'ar',
+            config: JSON.parse(JSON.stringify(project)),
           },
         });
       }
       projectId = activeProject.id;
 
-      const firstVerse = project.scenes[0]?.verse;
+      const genJobId = `job_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
       const generation = await db.generation.create({
         data: {
+          jobId: genJobId,
           userId: user.id,
           projectId: activeProject.id,
           type: 'VIDEO',
           status: 'QUEUED',
           progress: 0,
           currentStep: 'QUEUED_IN_PIPELINE',
-          surahNumber: firstVerse?.surahNumber || 1,
-          ayahStart: firstVerse?.ayahNumber || 1,
-          ayahEnd: project.scenes[project.scenes.length - 1]?.verse?.ayahNumber || firstVerse?.ayahNumber || 1,
-          aspectRatio:
-            project.aspectRatio === '9:16'
-              ? 'RATIO_9_16'
-              : project.aspectRatio === '16:9'
-                ? 'RATIO_16_9'
-                : project.aspectRatio === '1:1'
-                  ? 'RATIO_1_1'
-                  : 'RATIO_4_5',
-          config: JSON.parse(JSON.stringify(project)),
+          payload: JSON.parse(JSON.stringify(project)),
         },
       });
 

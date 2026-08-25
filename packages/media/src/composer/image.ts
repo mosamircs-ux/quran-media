@@ -1,11 +1,16 @@
-import sharp from 'sharp';
 import type { ImageCompositionOptions } from '../types.js';
 import { MediaProcessingError } from '@quran-media/config';
+
+async function getSharp() {
+  const mod = await import('sharp');
+  return (mod && (mod as any).default) ? (mod as any).default : mod;
+}
 
 export async function composeQuranImage(options: ImageCompositionOptions): Promise<Buffer> {
   const { width, height, backgroundBuffer, backgroundImagePath, arabicText, surahTitle } = options;
 
   try {
+    const sharp = await getSharp();
     let base = backgroundBuffer
       ? sharp(backgroundBuffer)
       : backgroundImagePath
@@ -22,7 +27,7 @@ export async function composeQuranImage(options: ImageCompositionOptions): Promi
     // Resize background to target aspect ratio (cover mode)
     base = base.resize(width, height, { fit: 'cover', position: 'center' });
 
-    const overlays: sharp.OverlayOptions[] = [];
+    const overlays: any[] = [];
 
     // Create dark gradient overlay for text readability
     const gradientSvg = Buffer.from(`

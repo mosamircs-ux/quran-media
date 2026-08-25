@@ -112,12 +112,11 @@ export async function GET(request: NextRequest) {
             : {}),
         },
         include: {
-          generations: {
+          jobs: {
             orderBy: { createdAt: 'desc' },
             take: 1,
-            include: { mediaAssets: true },
           },
-          mediaAssets: {
+          assets: {
             orderBy: { createdAt: 'desc' },
             take: 5,
           },
@@ -126,8 +125,8 @@ export async function GET(request: NextRequest) {
       });
 
       studioProjects = (projects as any[])?.map((p: any) => {
-        const latestGen = p.generations[0];
-        const latestAsset = latestGen?.mediaAssets[0] || p.mediaAssets[0];
+        const latestGen = p.jobs?.[0];
+        const latestAsset = p.assets?.[0];
 
         let computedStatus: 'DRAFT' | 'QUEUED' | 'PROCESSING' | 'COMPLETED' | 'FAILED' = 'DRAFT';
         if (latestGen) {
@@ -292,8 +291,8 @@ export async function POST(request: NextRequest) {
           userId: user.id,
           title,
           description: description || `إنتاج مرئي لسورة رقم ${surahNumber}`,
-          locale,
           status: 'DRAFT',
+          config: JSON.parse(JSON.stringify(newProjectRecord.config)),
         },
       });
     } catch {}

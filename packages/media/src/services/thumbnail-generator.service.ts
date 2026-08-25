@@ -1,10 +1,14 @@
 import ffmpeg from 'fluent-ffmpeg';
-import sharp from 'sharp';
 import fs from 'fs';
 import path from 'path';
 import type { MediaProject } from '../types/project.types.js';
 import { getResolutionDimensions } from '../types/project.types.js';
 import { logger } from '@quran-media/config';
+
+async function getSharp() {
+  const mod = await import('sharp');
+  return (mod && (mod as any).default) ? (mod as any).default : mod;
+}
 
 export class ThumbnailGenerator {
   /**
@@ -16,6 +20,7 @@ export class ThumbnailGenerator {
     outputPath: string,
     timestampSeconds: number = 2
   ): Promise<string> {
+    const sharp = await getSharp();
     const tempDir = path.dirname(outputPath);
     fs.mkdirSync(tempDir, { recursive: true });
 

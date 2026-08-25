@@ -77,7 +77,6 @@ export async function processImageGeneration(job: Job<ImageGenerationJobData>): 
       data: {
         userId,
         projectId,
-        generationId,
         type: 'IMAGE',
         aspectRatio:
           aspectRatio === '9:16'

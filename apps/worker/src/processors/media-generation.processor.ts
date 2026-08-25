@@ -274,7 +274,6 @@ export async function processVideoGeneration(job: Job<VideoGenerationJobData>): 
       data: {
         userId,
         projectId,
-        generationId,
         type: 'VIDEO',
         aspectRatio:
           aspectRatio === '9:16'

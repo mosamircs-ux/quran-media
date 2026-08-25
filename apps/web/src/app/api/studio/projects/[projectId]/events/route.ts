@@ -64,17 +64,20 @@ export async function GET(
             project = await db.project.findUnique({
               where: { id: projectId },
               include: {
-                generations: {
+                jobs: {
                   orderBy: { createdAt: 'desc' },
                   take: 1,
-                  include: { mediaAssets: true },
+                },
+                assets: {
+                  orderBy: { createdAt: 'desc' },
+                  take: 1,
                 },
               },
             });
           } catch {}
 
-          const latestGen = project?.generations[0];
-          const latestAsset = latestGen?.mediaAssets[0];
+          const latestGen = (project as any)?.jobs?.[0];
+          const latestAsset = (project as any)?.assets?.[0];
 
           if (latestGen) {
             const currentStatus = latestGen.status;

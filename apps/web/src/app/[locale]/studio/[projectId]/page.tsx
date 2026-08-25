@@ -40,12 +40,11 @@ export default async function StudioProjectPage({
     const project = await db.project.findUnique({
       where: { id: projectId },
       include: {
-        generations: {
+        jobs: {
           orderBy: { createdAt: 'desc' },
           take: 1,
-          include: { mediaAssets: true },
         },
-        mediaAssets: {
+        assets: {
           orderBy: { createdAt: 'desc' },
           take: 1,
         },
@@ -53,21 +52,21 @@ export default async function StudioProjectPage({
     });
 
     if (project) {
-      const latestGen = project.generations[0];
-      const latestAsset = latestGen?.mediaAssets[0] || project.mediaAssets[0];
+      const latestJob = (project as any).jobs?.[0];
+      const latestAsset = (project as any).assets?.[0];
 
       initialProject = {
         id: project.id,
         title: project.title,
         description: project.description,
-        status: latestGen?.status || project.status,
-        progress: latestGen?.progress ?? 0,
-        currentStep: latestGen?.currentStep || '',
-        config: latestGen?.config || null,
+        status: latestJob?.status || project.status,
+        progress: latestJob?.progress ?? 0,
+        currentStep: latestJob?.currentStep || '',
+        config: latestJob?.config || null,
         assets: {
-          videoUrl: latestAsset?.storageUrl || (latestGen?.result as any)?.storageUrl || null,
-          webmUrl: (latestAsset?.metadata as any)?.webmUrl || (latestGen?.result as any)?.webmUrl || null,
-          thumbnailUrl: latestAsset?.thumbnailUrl || (latestGen?.result as any)?.thumbnailUrl || null,
+          videoUrl: latestAsset?.storageUrl || (latestJob?.result as any)?.storageUrl || null,
+          webmUrl: (latestAsset?.metadata as any)?.webmUrl || (latestJob?.result as any)?.webmUrl || null,
+          thumbnailUrl: latestAsset?.thumbnailUrl || (latestJob?.result as any)?.thumbnailUrl || null,
         },
       };
     }

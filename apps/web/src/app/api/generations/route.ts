@@ -83,34 +83,21 @@ export async function POST(request: NextRequest) {
         data: {
           userId: user.id,
           title: `Surah ${surahNumber} Studio Project`,
-          locale,
+          config: JSON.parse(JSON.stringify(parsed.data)),
         },
       });
     }
 
     // 1. Create Generation record in DB
+    const genJobId = `job_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
     const generation = await db.generation.create({
       data: {
+        jobId: genJobId,
         userId: user.id,
         projectId: activeProject.id,
         type,
         status: 'PENDING',
-        surahNumber,
-        ayahStart,
-        ayahEnd,
-        reciterId,
-        stylePreset,
-        customPrompt,
-        aiProvider,
-        aspectRatio:
-          aspectRatio === '9:16'
-            ? 'RATIO_9_16'
-            : aspectRatio === '16:9'
-              ? 'RATIO_16_9'
-              : aspectRatio === '1:1'
-                ? 'RATIO_1_1'
-                : 'RATIO_4_5',
-        config: JSON.parse(JSON.stringify(parsed.data)),
+        payload: JSON.parse(JSON.stringify(parsed.data)),
       },
     });
 

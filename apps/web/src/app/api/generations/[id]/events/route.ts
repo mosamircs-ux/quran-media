@@ -50,13 +50,12 @@ export async function GET(
         try {
           const gen = await db.generation.findUnique({
             where: { id: generationId },
-            include: { mediaAssets: true },
           });
 
           if (gen) {
             const currentStatus = gen.status;
             const currentProgress = gen.progress;
-            const latestAsset = gen.mediaAssets[0];
+            const res = gen.result as any;
 
             if (currentProgress !== lastProgress || currentStatus !== lastStatus || pollCount % 4 === 0) {
               lastProgress = currentProgress;
@@ -69,8 +68,8 @@ export async function GET(
                 progress: currentProgress,
                 currentStep: gen.currentStep || '',
                 error: gen.error || null,
-                videoUrl: latestAsset?.storageUrl || (gen.result as any)?.storageUrl || null,
-                thumbnailUrl: latestAsset?.thumbnailUrl || (gen.result as any)?.thumbnailUrl || null,
+                videoUrl: res?.storageUrl || null,
+                thumbnailUrl: res?.thumbnailUrl || null,
                 timestamp: new Date().toISOString(),
               });
             }
