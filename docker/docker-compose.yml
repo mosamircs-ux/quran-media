@@ -52,7 +52,46 @@ services:
       timeout: 5s
       retries: 5
 
+  web:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.web
+    container_name: quran_media_web
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgresql://postgres:password123@postgres:5432/quran_media?schema=public
+      REDIS_URL: redis://redis:6379
+      PORT: 3000
+    ports:
+      - "3000:3000"
+
+  worker:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.worker
+    container_name: quran_media_worker
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgresql://postgres:password123@postgres:5432/quran_media?schema=public
+      REDIS_URL: redis://redis:6379
+      MEDIA_TEMP_DIR: /tmp/quran-media
+    volumes:
+      - media_temp:/tmp/quran-media
+
 volumes:
   postgres_data:
   redis_data:
   minio_data:
+  media_temp:
